@@ -1,0 +1,1689 @@
+2023/06/07 18:56:19 - mmengine - INFO - 
+------------------------------------------------------------
+System environment:
+    sys.platform: win32
+    Python: 3.9.16 (main, Mar  8 2023, 10:39:24) [MSC v.1916 64 bit (AMD64)]
+    CUDA available: True
+    numpy_random_seed: 391267352
+    GPU 0: NVIDIA GeForce RTX 3060
+    CUDA_HOME: None
+    MSVC: 用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.30.30706 版
+    GCC: n/a
+    PyTorch: 2.0.1+cu117
+    PyTorch compiling details: PyTorch built with:
+  - C++ Version: 199711
+  - MSVC 193431937
+  - Intel(R) Math Kernel Library Version 2020.0.2 Product Build 20200624 for Intel(R) 64 architecture applications
+  - Intel(R) MKL-DNN v2.7.3 (Git Hash 6dbeffbae1f23cbbeae17adb7b5b13f1f37c080e)
+  - OpenMP 2019
+  - LAPACK is enabled (usually provided by MKL)
+  - CPU capability usage: AVX2
+  - CUDA Runtime 11.7
+  - NVCC architecture flags: -gencode;arch=compute_37,code=sm_37;-gencode;arch=compute_50,code=sm_50;-gencode;arch=compute_60,code=sm_60;-gencode;arch=compute_61,code=sm_61;-gencode;arch=compute_70,code=sm_70;-gencode;arch=compute_75,code=sm_75;-gencode;arch=compute_80,code=sm_80;-gencode;arch=compute_86,code=sm_86;-gencode;arch=compute_37,code=compute_37
+  - CuDNN 8.5
+  - Magma 2.5.4
+  - Build settings: BLAS_INFO=mkl, BUILD_TYPE=Release, CUDA_VERSION=11.7, CUDNN_VERSION=8.5.0, CXX_COMPILER=C:/actions-runner/_work/pytorch/pytorch/builder/windows/tmp_bin/sccache-cl.exe, CXX_FLAGS=/DWIN32 /D_WINDOWS /GR /EHsc /w /bigobj /FS -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOCUPTI -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE, LAPACK_INFO=mkl, PERF_WITH_AVX=1, PERF_WITH_AVX2=1, PERF_WITH_AVX512=1, TORCH_DISABLE_GPU_ASSERTS=OFF, TORCH_VERSION=2.0.1, USE_CUDA=ON, USE_CUDNN=ON, USE_EXCEPTION_PTR=1, USE_GFLAGS=OFF, USE_GLOG=OFF, USE_MKL=ON, USE_MKLDNN=ON, USE_MPI=OFF, USE_NCCL=OFF, USE_NNPACK=OFF, USE_OPENMP=ON, USE_ROCM=OFF, 
+
+    TorchVision: 0.15.2+cu117
+    OpenCV: 4.7.0
+    MMEngine: 0.7.3
+
+Runtime environment:
+    cudnn_benchmark: False
+    mp_cfg: {'mp_start_method': 'fork', 'opencv_num_threads': 0}
+    dist_cfg: {'backend': 'nccl'}
+    seed: None
+    deterministic: False
+    Distributed launcher: none
+    Distributed training: False
+    GPU number: 1
+------------------------------------------------------------
+
+2023/06/07 18:56:19 - mmengine - INFO - Config:
+model = dict(
+    type='ImageClassifier',
+    backbone=dict(
+        type='ResNeSt',
+        depth=50,
+        num_stages=4,
+        out_indices=(3, ),
+        style='pytorch'),
+    neck=dict(type='GlobalAveragePooling'),
+    head=dict(
+        type='LinearClsHead',
+        num_classes=30,
+        in_channels=2048,
+        loss=dict(
+            type='LabelSmoothLoss',
+            label_smooth_val=0.1,
+            num_classes=30,
+            reduction='mean',
+            loss_weight=1.0),
+        topk=(1, 5),
+        cal_acc=False),
+    train_cfg=dict(augments=dict(type='Mixup', alpha=0.2)),
+    init_cfg=dict(
+        type='Pretrained',
+        checkpoint=
+        'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth'
+    ))
+dataset_type = 'CustomDataset'
+data_preprocessor = dict(
+    num_classes=30,
+    mean=[123.675, 116.28, 103.53],
+    std=[58.395, 57.12, 57.375],
+    to_rgb=True)
+train_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='RandomResizedCrop', scale=224),
+    dict(type='RandomFlip', prob=0.5, direction='horizontal'),
+    dict(type='PackInputs')
+]
+test_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='ResizeEdge', scale=256, edge='short'),
+    dict(type='CenterCrop', crop_size=224),
+    dict(type='PackInputs')
+]
+train_dataloader = dict(
+    pin_memory=True,
+    persistent_workers=True,
+    collate_fn=dict(type='default_collate'),
+    batch_size=32,
+    num_workers=5,
+    dataset=dict(
+        type='CustomDataset',
+        data_root='data/fruit30/training_set',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='RandomResizedCrop', scale=224),
+            dict(type='RandomFlip', prob=0.5, direction='horizontal'),
+            dict(type='PackInputs')
+        ]),
+    sampler=dict(type='DefaultSampler', shuffle=True))
+val_dataloader = dict(
+    pin_memory=True,
+    persistent_workers=True,
+    collate_fn=dict(type='default_collate'),
+    batch_size=32,
+    num_workers=5,
+    dataset=dict(
+        type='CustomDataset',
+        data_root='data/fruit30/val_set',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='ResizeEdge', scale=256, edge='short'),
+            dict(type='CenterCrop', crop_size=224),
+            dict(type='PackInputs')
+        ]),
+    sampler=dict(type='DefaultSampler', shuffle=False))
+val_evaluator = dict(type='Accuracy', topk=(1, 5))
+test_dataloader = dict(
+    pin_memory=True,
+    persistent_workers=True,
+    collate_fn=dict(type='default_collate'),
+    batch_size=32,
+    num_workers=5,
+    dataset=dict(
+        type='CustomDataset',
+        data_root='data/fruit30/val_set',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='ResizeEdge', scale=256, edge='short'),
+            dict(type='CenterCrop', crop_size=224),
+            dict(type='PackInputs')
+        ]),
+    sampler=dict(type='DefaultSampler', shuffle=False))
+test_evaluator = dict(type='Accuracy', topk=(1, 5))
+optim_wrapper = dict(
+    optimizer=dict(type='SGD', lr=0.1, momentum=0.9, weight_decay=0.0001))
+param_scheduler = dict(
+    type='MultiStepLR', by_epoch=True, milestones=[30, 60, 90], gamma=0.1)
+train_cfg = dict(by_epoch=True, max_epochs=200, val_interval=10)
+val_cfg = dict()
+test_cfg = dict()
+auto_scale_lr = dict(base_batch_size=256)
+default_scope = 'mmpretrain'
+default_hooks = dict(
+    timer=dict(type='IterTimerHook'),
+    logger=dict(type='LoggerHook', interval=100),
+    param_scheduler=dict(type='ParamSchedulerHook'),
+    checkpoint=dict(type='CheckpointHook', interval=1),
+    sampler_seed=dict(type='DistSamplerSeedHook'),
+    visualization=dict(type='VisualizationHook', enable=False))
+env_cfg = dict(
+    cudnn_benchmark=False,
+    mp_cfg=dict(mp_start_method='fork', opencv_num_threads=0),
+    dist_cfg=dict(backend='nccl'))
+vis_backends = [dict(type='LocalVisBackend')]
+visualizer = dict(
+    type='UniversalVisualizer', vis_backends=[dict(type='LocalVisBackend')])
+log_level = 'INFO'
+load_from = None
+resume = False
+randomness = dict(seed=None, deterministic=False)
+launcher = 'none'
+work_dir = './work_dirs\\resnet50_finetune'
+
+2023/06/07 18:56:21 - mmengine - INFO - Because batch augmentations are enabled, the data preprocessor automatically enables the `to_onehot` option to generate one-hot format labels.
+2023/06/07 18:56:22 - mmengine - INFO - Distributed training is not used, all SyncBatchNorm (SyncBN) layers in the model will be automatically reverted to BatchNormXd layers if they are used.
+2023/06/07 18:56:22 - mmengine - INFO - Hooks will be executed in the following order:
+before_run:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+before_train:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+before_train_epoch:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) DistSamplerSeedHook                
+ -------------------- 
+before_train_iter:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+after_train_iter:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(BELOW_NORMAL) LoggerHook                         
+(LOW         ) ParamSchedulerHook                 
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+after_train_epoch:
+(NORMAL      ) IterTimerHook                      
+(LOW         ) ParamSchedulerHook                 
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+before_val_epoch:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+before_val_iter:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+after_val_iter:
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) VisualizationHook                  
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+after_val_epoch:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(BELOW_NORMAL) LoggerHook                         
+(LOW         ) ParamSchedulerHook                 
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+after_train:
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+before_test_epoch:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+before_test_iter:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+after_test_iter:
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) VisualizationHook                  
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+after_test_epoch:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+after_run:
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+2023/06/07 18:56:24 - mmengine - INFO - load model from: https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth
+2023/06/07 18:56:24 - mmengine - INFO - Loads checkpoint by http backend from path: https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth
+2023/06/07 18:56:24 - mmengine - WARNING - The model and loaded state dict do not match exactly
+
+size mismatch for backbone.layer2.0.downsample.1.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([512, 256, 1, 1]).
+size mismatch for backbone.layer3.0.downsample.1.weight: copying a param with shape torch.Size([1024]) from checkpoint, the shape in current model is torch.Size([1024, 512, 1, 1]).
+size mismatch for backbone.layer4.0.downsample.1.weight: copying a param with shape torch.Size([2048]) from checkpoint, the shape in current model is torch.Size([2048, 1024, 1, 1]).
+size mismatch for head.fc.weight: copying a param with shape torch.Size([1000, 2048]) from checkpoint, the shape in current model is torch.Size([30, 2048]).
+size mismatch for head.fc.bias: copying a param with shape torch.Size([1000]) from checkpoint, the shape in current model is torch.Size([30]).
+unexpected key in source state_dict: backbone.conv1.weight, backbone.bn1.weight, backbone.bn1.bias, backbone.bn1.running_mean, backbone.bn1.running_var, backbone.bn1.num_batches_tracked, backbone.layer1.0.bn2.weight, backbone.layer1.0.bn2.bias, backbone.layer1.0.bn2.running_mean, backbone.layer1.0.bn2.running_var, backbone.layer1.0.bn2.num_batches_tracked, backbone.layer1.0.conv2.weight, backbone.layer1.1.bn2.weight, backbone.layer1.1.bn2.bias, backbone.layer1.1.bn2.running_mean, backbone.layer1.1.bn2.running_var, backbone.layer1.1.bn2.num_batches_tracked, backbone.layer1.1.conv2.weight, backbone.layer1.2.bn2.weight, backbone.layer1.2.bn2.bias, backbone.layer1.2.bn2.running_mean, backbone.layer1.2.bn2.running_var, backbone.layer1.2.bn2.num_batches_tracked, backbone.layer1.2.conv2.weight, backbone.layer2.0.bn2.weight, backbone.layer2.0.bn2.bias, backbone.layer2.0.bn2.running_mean, backbone.layer2.0.bn2.running_var, backbone.layer2.0.bn2.num_batches_tracked, backbone.layer2.0.conv2.weight, backbone.layer2.0.downsample.0.weight, backbone.layer2.0.downsample.1.bias, backbone.layer2.0.downsample.1.running_mean, backbone.layer2.0.downsample.1.running_var, backbone.layer2.0.downsample.1.num_batches_tracked, backbone.layer2.1.bn2.weight, backbone.layer2.1.bn2.bias, backbone.layer2.1.bn2.running_mean, backbone.layer2.1.bn2.running_var, backbone.layer2.1.bn2.num_batches_tracked, backbone.layer2.1.conv2.weight, backbone.layer2.2.bn2.weight, backbone.layer2.2.bn2.bias, backbone.layer2.2.bn2.running_mean, backbone.layer2.2.bn2.running_var, backbone.layer2.2.bn2.num_batches_tracked, backbone.layer2.2.conv2.weight, backbone.layer2.3.bn2.weight, backbone.layer2.3.bn2.bias, backbone.layer2.3.bn2.running_mean, backbone.layer2.3.bn2.running_var, backbone.layer2.3.bn2.num_batches_tracked, backbone.layer2.3.conv2.weight, backbone.layer3.0.bn2.weight, backbone.layer3.0.bn2.bias, backbone.layer3.0.bn2.running_mean, backbone.layer3.0.bn2.running_var, backbone.layer3.0.bn2.num_batches_tracked, backbone.layer3.0.conv2.weight, backbone.layer3.0.downsample.0.weight, backbone.layer3.0.downsample.1.bias, backbone.layer3.0.downsample.1.running_mean, backbone.layer3.0.downsample.1.running_var, backbone.layer3.0.downsample.1.num_batches_tracked, backbone.layer3.1.bn2.weight, backbone.layer3.1.bn2.bias, backbone.layer3.1.bn2.running_mean, backbone.layer3.1.bn2.running_var, backbone.layer3.1.bn2.num_batches_tracked, backbone.layer3.1.conv2.weight, backbone.layer3.2.bn2.weight, backbone.layer3.2.bn2.bias, backbone.layer3.2.bn2.running_mean, backbone.layer3.2.bn2.running_var, backbone.layer3.2.bn2.num_batches_tracked, backbone.layer3.2.conv2.weight, backbone.layer3.3.bn2.weight, backbone.layer3.3.bn2.bias, backbone.layer3.3.bn2.running_mean, backbone.layer3.3.bn2.running_var, backbone.layer3.3.bn2.num_batches_tracked, backbone.layer3.3.conv2.weight, backbone.layer3.4.bn2.weight, backbone.layer3.4.bn2.bias, backbone.layer3.4.bn2.running_mean, backbone.layer3.4.bn2.running_var, backbone.layer3.4.bn2.num_batches_tracked, backbone.layer3.4.conv2.weight, backbone.layer3.5.bn2.weight, backbone.layer3.5.bn2.bias, backbone.layer3.5.bn2.running_mean, backbone.layer3.5.bn2.running_var, backbone.layer3.5.bn2.num_batches_tracked, backbone.layer3.5.conv2.weight, backbone.layer4.0.bn2.weight, backbone.layer4.0.bn2.bias, backbone.layer4.0.bn2.running_mean, backbone.layer4.0.bn2.running_var, backbone.layer4.0.bn2.num_batches_tracked, backbone.layer4.0.conv2.weight, backbone.layer4.0.downsample.0.weight, backbone.layer4.0.downsample.1.bias, backbone.layer4.0.downsample.1.running_mean, backbone.layer4.0.downsample.1.running_var, backbone.layer4.0.downsample.1.num_batches_tracked, backbone.layer4.1.bn2.weight, backbone.layer4.1.bn2.bias, backbone.layer4.1.bn2.running_mean, backbone.layer4.1.bn2.running_var, backbone.layer4.1.bn2.num_batches_tracked, backbone.layer4.1.conv2.weight, backbone.layer4.2.bn2.weight, backbone.layer4.2.bn2.bias, backbone.layer4.2.bn2.running_mean, backbone.layer4.2.bn2.running_var, backbone.layer4.2.bn2.num_batches_tracked, backbone.layer4.2.conv2.weight
+
+missing keys in source state_dict: backbone.stem.0.conv.weight, backbone.stem.0.bn.weight, backbone.stem.0.bn.bias, backbone.stem.0.bn.running_mean, backbone.stem.0.bn.running_var, backbone.stem.1.conv.weight, backbone.stem.1.bn.weight, backbone.stem.1.bn.bias, backbone.stem.1.bn.running_mean, backbone.stem.1.bn.running_var, backbone.stem.2.conv.weight, backbone.stem.2.bn.weight, backbone.stem.2.bn.bias, backbone.stem.2.bn.running_mean, backbone.stem.2.bn.running_var, backbone.layer1.0.conv2.conv.weight, backbone.layer1.0.conv2.bn0.weight, backbone.layer1.0.conv2.bn0.bias, backbone.layer1.0.conv2.bn0.running_mean, backbone.layer1.0.conv2.bn0.running_var, backbone.layer1.0.conv2.fc1.weight, backbone.layer1.0.conv2.fc1.bias, backbone.layer1.0.conv2.bn1.weight, backbone.layer1.0.conv2.bn1.bias, backbone.layer1.0.conv2.bn1.running_mean, backbone.layer1.0.conv2.bn1.running_var, backbone.layer1.0.conv2.fc2.weight, backbone.layer1.0.conv2.fc2.bias, backbone.layer1.1.conv2.conv.weight, backbone.layer1.1.conv2.bn0.weight, backbone.layer1.1.conv2.bn0.bias, backbone.layer1.1.conv2.bn0.running_mean, backbone.layer1.1.conv2.bn0.running_var, backbone.layer1.1.conv2.fc1.weight, backbone.layer1.1.conv2.fc1.bias, backbone.layer1.1.conv2.bn1.weight, backbone.layer1.1.conv2.bn1.bias, backbone.layer1.1.conv2.bn1.running_mean, backbone.layer1.1.conv2.bn1.running_var, backbone.layer1.1.conv2.fc2.weight, backbone.layer1.1.conv2.fc2.bias, backbone.layer1.2.conv2.conv.weight, backbone.layer1.2.conv2.bn0.weight, backbone.layer1.2.conv2.bn0.bias, backbone.layer1.2.conv2.bn0.running_mean, backbone.layer1.2.conv2.bn0.running_var, backbone.layer1.2.conv2.fc1.weight, backbone.layer1.2.conv2.fc1.bias, backbone.layer1.2.conv2.bn1.weight, backbone.layer1.2.conv2.bn1.bias, backbone.layer1.2.conv2.bn1.running_mean, backbone.layer1.2.conv2.bn1.running_var, backbone.layer1.2.conv2.fc2.weight, backbone.layer1.2.conv2.fc2.bias, backbone.layer2.0.conv2.conv.weight, backbone.layer2.0.conv2.bn0.weight, backbone.layer2.0.conv2.bn0.bias, backbone.layer2.0.conv2.bn0.running_mean, backbone.layer2.0.conv2.bn0.running_var, backbone.layer2.0.conv2.fc1.weight, backbone.layer2.0.conv2.fc1.bias, backbone.layer2.0.conv2.bn1.weight, backbone.layer2.0.conv2.bn1.bias, backbone.layer2.0.conv2.bn1.running_mean, backbone.layer2.0.conv2.bn1.running_var, backbone.layer2.0.conv2.fc2.weight, backbone.layer2.0.conv2.fc2.bias, backbone.layer2.0.downsample.2.weight, backbone.layer2.0.downsample.2.bias, backbone.layer2.0.downsample.2.running_mean, backbone.layer2.0.downsample.2.running_var, backbone.layer2.1.conv2.conv.weight, backbone.layer2.1.conv2.bn0.weight, backbone.layer2.1.conv2.bn0.bias, backbone.layer2.1.conv2.bn0.running_mean, backbone.layer2.1.conv2.bn0.running_var, backbone.layer2.1.conv2.fc1.weight, backbone.layer2.1.conv2.fc1.bias, backbone.layer2.1.conv2.bn1.weight, backbone.layer2.1.conv2.bn1.bias, backbone.layer2.1.conv2.bn1.running_mean, backbone.layer2.1.conv2.bn1.running_var, backbone.layer2.1.conv2.fc2.weight, backbone.layer2.1.conv2.fc2.bias, backbone.layer2.2.conv2.conv.weight, backbone.layer2.2.conv2.bn0.weight, backbone.layer2.2.conv2.bn0.bias, backbone.layer2.2.conv2.bn0.running_mean, backbone.layer2.2.conv2.bn0.running_var, backbone.layer2.2.conv2.fc1.weight, backbone.layer2.2.conv2.fc1.bias, backbone.layer2.2.conv2.bn1.weight, backbone.layer2.2.conv2.bn1.bias, backbone.layer2.2.conv2.bn1.running_mean, backbone.layer2.2.conv2.bn1.running_var, backbone.layer2.2.conv2.fc2.weight, backbone.layer2.2.conv2.fc2.bias, backbone.layer2.3.conv2.conv.weight, backbone.layer2.3.conv2.bn0.weight, backbone.layer2.3.conv2.bn0.bias, backbone.layer2.3.conv2.bn0.running_mean, backbone.layer2.3.conv2.bn0.running_var, backbone.layer2.3.conv2.fc1.weight, backbone.layer2.3.conv2.fc1.bias, backbone.layer2.3.conv2.bn1.weight, backbone.layer2.3.conv2.bn1.bias, backbone.layer2.3.conv2.bn1.running_mean, backbone.layer2.3.conv2.bn1.running_var, backbone.layer2.3.conv2.fc2.weight, backbone.layer2.3.conv2.fc2.bias, backbone.layer3.0.conv2.conv.weight, backbone.layer3.0.conv2.bn0.weight, backbone.layer3.0.conv2.bn0.bias, backbone.layer3.0.conv2.bn0.running_mean, backbone.layer3.0.conv2.bn0.running_var, backbone.layer3.0.conv2.fc1.weight, backbone.layer3.0.conv2.fc1.bias, backbone.layer3.0.conv2.bn1.weight, backbone.layer3.0.conv2.bn1.bias, backbone.layer3.0.conv2.bn1.running_mean, backbone.layer3.0.conv2.bn1.running_var, backbone.layer3.0.conv2.fc2.weight, backbone.layer3.0.conv2.fc2.bias, backbone.layer3.0.downsample.2.weight, backbone.layer3.0.downsample.2.bias, backbone.layer3.0.downsample.2.running_mean, backbone.layer3.0.downsample.2.running_var, backbone.layer3.1.conv2.conv.weight, backbone.layer3.1.conv2.bn0.weight, backbone.layer3.1.conv2.bn0.bias, backbone.layer3.1.conv2.bn0.running_mean, backbone.layer3.1.conv2.bn0.running_var, backbone.layer3.1.conv2.fc1.weight, backbone.layer3.1.conv2.fc1.bias, backbone.layer3.1.conv2.bn1.weight, backbone.layer3.1.conv2.bn1.bias, backbone.layer3.1.conv2.bn1.running_mean, backbone.layer3.1.conv2.bn1.running_var, backbone.layer3.1.conv2.fc2.weight, backbone.layer3.1.conv2.fc2.bias, backbone.layer3.2.conv2.conv.weight, backbone.layer3.2.conv2.bn0.weight, backbone.layer3.2.conv2.bn0.bias, backbone.layer3.2.conv2.bn0.running_mean, backbone.layer3.2.conv2.bn0.running_var, backbone.layer3.2.conv2.fc1.weight, backbone.layer3.2.conv2.fc1.bias, backbone.layer3.2.conv2.bn1.weight, backbone.layer3.2.conv2.bn1.bias, backbone.layer3.2.conv2.bn1.running_mean, backbone.layer3.2.conv2.bn1.running_var, backbone.layer3.2.conv2.fc2.weight, backbone.layer3.2.conv2.fc2.bias, backbone.layer3.3.conv2.conv.weight, backbone.layer3.3.conv2.bn0.weight, backbone.layer3.3.conv2.bn0.bias, backbone.layer3.3.conv2.bn0.running_mean, backbone.layer3.3.conv2.bn0.running_var, backbone.layer3.3.conv2.fc1.weight, backbone.layer3.3.conv2.fc1.bias, backbone.layer3.3.conv2.bn1.weight, backbone.layer3.3.conv2.bn1.bias, backbone.layer3.3.conv2.bn1.running_mean, backbone.layer3.3.conv2.bn1.running_var, backbone.layer3.3.conv2.fc2.weight, backbone.layer3.3.conv2.fc2.bias, backbone.layer3.4.conv2.conv.weight, backbone.layer3.4.conv2.bn0.weight, backbone.layer3.4.conv2.bn0.bias, backbone.layer3.4.conv2.bn0.running_mean, backbone.layer3.4.conv2.bn0.running_var, backbone.layer3.4.conv2.fc1.weight, backbone.layer3.4.conv2.fc1.bias, backbone.layer3.4.conv2.bn1.weight, backbone.layer3.4.conv2.bn1.bias, backbone.layer3.4.conv2.bn1.running_mean, backbone.layer3.4.conv2.bn1.running_var, backbone.layer3.4.conv2.fc2.weight, backbone.layer3.4.conv2.fc2.bias, backbone.layer3.5.conv2.conv.weight, backbone.layer3.5.conv2.bn0.weight, backbone.layer3.5.conv2.bn0.bias, backbone.layer3.5.conv2.bn0.running_mean, backbone.layer3.5.conv2.bn0.running_var, backbone.layer3.5.conv2.fc1.weight, backbone.layer3.5.conv2.fc1.bias, backbone.layer3.5.conv2.bn1.weight, backbone.layer3.5.conv2.bn1.bias, backbone.layer3.5.conv2.bn1.running_mean, backbone.layer3.5.conv2.bn1.running_var, backbone.layer3.5.conv2.fc2.weight, backbone.layer3.5.conv2.fc2.bias, backbone.layer4.0.conv2.conv.weight, backbone.layer4.0.conv2.bn0.weight, backbone.layer4.0.conv2.bn0.bias, backbone.layer4.0.conv2.bn0.running_mean, backbone.layer4.0.conv2.bn0.running_var, backbone.layer4.0.conv2.fc1.weight, backbone.layer4.0.conv2.fc1.bias, backbone.layer4.0.conv2.bn1.weight, backbone.layer4.0.conv2.bn1.bias, backbone.layer4.0.conv2.bn1.running_mean, backbone.layer4.0.conv2.bn1.running_var, backbone.layer4.0.conv2.fc2.weight, backbone.layer4.0.conv2.fc2.bias, backbone.layer4.0.downsample.2.weight, backbone.layer4.0.downsample.2.bias, backbone.layer4.0.downsample.2.running_mean, backbone.layer4.0.downsample.2.running_var, backbone.layer4.1.conv2.conv.weight, backbone.layer4.1.conv2.bn0.weight, backbone.layer4.1.conv2.bn0.bias, backbone.layer4.1.conv2.bn0.running_mean, backbone.layer4.1.conv2.bn0.running_var, backbone.layer4.1.conv2.fc1.weight, backbone.layer4.1.conv2.fc1.bias, backbone.layer4.1.conv2.bn1.weight, backbone.layer4.1.conv2.bn1.bias, backbone.layer4.1.conv2.bn1.running_mean, backbone.layer4.1.conv2.bn1.running_var, backbone.layer4.1.conv2.fc2.weight, backbone.layer4.1.conv2.fc2.bias, backbone.layer4.2.conv2.conv.weight, backbone.layer4.2.conv2.bn0.weight, backbone.layer4.2.conv2.bn0.bias, backbone.layer4.2.conv2.bn0.running_mean, backbone.layer4.2.conv2.bn0.running_var, backbone.layer4.2.conv2.fc1.weight, backbone.layer4.2.conv2.fc1.bias, backbone.layer4.2.conv2.bn1.weight, backbone.layer4.2.conv2.bn1.bias, backbone.layer4.2.conv2.bn1.running_mean, backbone.layer4.2.conv2.bn1.running_var, backbone.layer4.2.conv2.fc2.weight, backbone.layer4.2.conv2.fc2.bias
+
+Name of parameter - Initialization information
+
+backbone.stem.0.conv.weight - torch.Size([32, 3, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.stem.0.bn.weight - torch.Size([32]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.stem.0.bn.bias - torch.Size([32]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.stem.1.conv.weight - torch.Size([32, 32, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.stem.1.bn.weight - torch.Size([32]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.stem.1.bn.bias - torch.Size([32]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.stem.2.conv.weight - torch.Size([64, 32, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.stem.2.bn.weight - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.stem.2.bn.bias - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.0.conv1.weight - torch.Size([64, 64, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.0.bn1.weight - torch.Size([64]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.0.bn1.bias - torch.Size([64]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.0.conv2.conv.weight - torch.Size([128, 32, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.0.conv2.bn0.weight - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.0.conv2.bn0.bias - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.0.conv2.fc1.weight - torch.Size([32, 64, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.0.conv2.fc1.bias - torch.Size([32]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.0.conv2.bn1.weight - torch.Size([32]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.0.conv2.bn1.bias - torch.Size([32]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.0.conv2.fc2.weight - torch.Size([128, 32, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.0.conv2.fc2.bias - torch.Size([128]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.0.conv3.weight - torch.Size([256, 64, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.0.bn3.weight - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.0.bn3.bias - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.0.downsample.0.weight - torch.Size([256, 64, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.0.downsample.1.weight - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.0.downsample.1.bias - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.1.conv1.weight - torch.Size([64, 256, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.1.bn1.weight - torch.Size([64]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.1.bn1.bias - torch.Size([64]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.1.conv2.conv.weight - torch.Size([128, 32, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.1.conv2.bn0.weight - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.1.conv2.bn0.bias - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.1.conv2.fc1.weight - torch.Size([32, 64, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.1.conv2.fc1.bias - torch.Size([32]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.1.conv2.bn1.weight - torch.Size([32]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.1.conv2.bn1.bias - torch.Size([32]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.1.conv2.fc2.weight - torch.Size([128, 32, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.1.conv2.fc2.bias - torch.Size([128]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.1.conv3.weight - torch.Size([256, 64, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.1.bn3.weight - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.1.bn3.bias - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.2.conv1.weight - torch.Size([64, 256, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.2.bn1.weight - torch.Size([64]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.2.bn1.bias - torch.Size([64]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.2.conv2.conv.weight - torch.Size([128, 32, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.2.conv2.bn0.weight - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.2.conv2.bn0.bias - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.2.conv2.fc1.weight - torch.Size([32, 64, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.2.conv2.fc1.bias - torch.Size([32]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.2.conv2.bn1.weight - torch.Size([32]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.2.conv2.bn1.bias - torch.Size([32]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.2.conv2.fc2.weight - torch.Size([128, 32, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.2.conv2.fc2.bias - torch.Size([128]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer1.2.conv3.weight - torch.Size([256, 64, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.2.bn3.weight - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer1.2.bn3.bias - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.0.conv1.weight - torch.Size([128, 256, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.0.bn1.weight - torch.Size([128]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.0.bn1.bias - torch.Size([128]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.0.conv2.conv.weight - torch.Size([256, 64, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.0.conv2.bn0.weight - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.0.conv2.bn0.bias - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.0.conv2.fc1.weight - torch.Size([64, 128, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.0.conv2.fc1.bias - torch.Size([64]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.0.conv2.bn1.weight - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.0.conv2.bn1.bias - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.0.conv2.fc2.weight - torch.Size([256, 64, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.0.conv2.fc2.bias - torch.Size([256]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.0.conv3.weight - torch.Size([512, 128, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.0.bn3.weight - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.0.bn3.bias - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.0.downsample.1.weight - torch.Size([512, 256, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.0.downsample.2.weight - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.0.downsample.2.bias - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.1.conv1.weight - torch.Size([128, 512, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.1.bn1.weight - torch.Size([128]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.1.bn1.bias - torch.Size([128]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.1.conv2.conv.weight - torch.Size([256, 64, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.1.conv2.bn0.weight - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.1.conv2.bn0.bias - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.1.conv2.fc1.weight - torch.Size([64, 128, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.1.conv2.fc1.bias - torch.Size([64]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.1.conv2.bn1.weight - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.1.conv2.bn1.bias - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.1.conv2.fc2.weight - torch.Size([256, 64, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.1.conv2.fc2.bias - torch.Size([256]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.1.conv3.weight - torch.Size([512, 128, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.1.bn3.weight - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.1.bn3.bias - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.2.conv1.weight - torch.Size([128, 512, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.2.bn1.weight - torch.Size([128]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.2.bn1.bias - torch.Size([128]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.2.conv2.conv.weight - torch.Size([256, 64, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.2.conv2.bn0.weight - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.2.conv2.bn0.bias - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.2.conv2.fc1.weight - torch.Size([64, 128, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.2.conv2.fc1.bias - torch.Size([64]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.2.conv2.bn1.weight - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.2.conv2.bn1.bias - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.2.conv2.fc2.weight - torch.Size([256, 64, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.2.conv2.fc2.bias - torch.Size([256]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.2.conv3.weight - torch.Size([512, 128, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.2.bn3.weight - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.2.bn3.bias - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.3.conv1.weight - torch.Size([128, 512, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.3.bn1.weight - torch.Size([128]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.3.bn1.bias - torch.Size([128]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.3.conv2.conv.weight - torch.Size([256, 64, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.3.conv2.bn0.weight - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.3.conv2.bn0.bias - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.3.conv2.fc1.weight - torch.Size([64, 128, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.3.conv2.fc1.bias - torch.Size([64]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.3.conv2.bn1.weight - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.3.conv2.bn1.bias - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.3.conv2.fc2.weight - torch.Size([256, 64, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.3.conv2.fc2.bias - torch.Size([256]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer2.3.conv3.weight - torch.Size([512, 128, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.3.bn3.weight - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer2.3.bn3.bias - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.0.conv1.weight - torch.Size([256, 512, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.0.bn1.weight - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.0.bn1.bias - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.0.conv2.conv.weight - torch.Size([512, 128, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.0.conv2.bn0.weight - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.0.conv2.bn0.bias - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.0.conv2.fc1.weight - torch.Size([128, 256, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.0.conv2.fc1.bias - torch.Size([128]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.0.conv2.bn1.weight - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.0.conv2.bn1.bias - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.0.conv2.fc2.weight - torch.Size([512, 128, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.0.conv2.fc2.bias - torch.Size([512]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.0.conv3.weight - torch.Size([1024, 256, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.0.bn3.weight - torch.Size([1024]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.0.bn3.bias - torch.Size([1024]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.0.downsample.1.weight - torch.Size([1024, 512, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.0.downsample.2.weight - torch.Size([1024]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.0.downsample.2.bias - torch.Size([1024]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.1.conv1.weight - torch.Size([256, 1024, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.1.bn1.weight - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.1.bn1.bias - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.1.conv2.conv.weight - torch.Size([512, 128, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.1.conv2.bn0.weight - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.1.conv2.bn0.bias - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.1.conv2.fc1.weight - torch.Size([128, 256, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.1.conv2.fc1.bias - torch.Size([128]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.1.conv2.bn1.weight - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.1.conv2.bn1.bias - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.1.conv2.fc2.weight - torch.Size([512, 128, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.1.conv2.fc2.bias - torch.Size([512]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.1.conv3.weight - torch.Size([1024, 256, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.1.bn3.weight - torch.Size([1024]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.1.bn3.bias - torch.Size([1024]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.2.conv1.weight - torch.Size([256, 1024, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.2.bn1.weight - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.2.bn1.bias - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.2.conv2.conv.weight - torch.Size([512, 128, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.2.conv2.bn0.weight - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.2.conv2.bn0.bias - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.2.conv2.fc1.weight - torch.Size([128, 256, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.2.conv2.fc1.bias - torch.Size([128]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.2.conv2.bn1.weight - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.2.conv2.bn1.bias - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.2.conv2.fc2.weight - torch.Size([512, 128, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.2.conv2.fc2.bias - torch.Size([512]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.2.conv3.weight - torch.Size([1024, 256, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.2.bn3.weight - torch.Size([1024]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.2.bn3.bias - torch.Size([1024]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.3.conv1.weight - torch.Size([256, 1024, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.3.bn1.weight - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.3.bn1.bias - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.3.conv2.conv.weight - torch.Size([512, 128, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.3.conv2.bn0.weight - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.3.conv2.bn0.bias - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.3.conv2.fc1.weight - torch.Size([128, 256, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.3.conv2.fc1.bias - torch.Size([128]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.3.conv2.bn1.weight - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.3.conv2.bn1.bias - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.3.conv2.fc2.weight - torch.Size([512, 128, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.3.conv2.fc2.bias - torch.Size([512]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.3.conv3.weight - torch.Size([1024, 256, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.3.bn3.weight - torch.Size([1024]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.3.bn3.bias - torch.Size([1024]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.4.conv1.weight - torch.Size([256, 1024, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.4.bn1.weight - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.4.bn1.bias - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.4.conv2.conv.weight - torch.Size([512, 128, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.4.conv2.bn0.weight - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.4.conv2.bn0.bias - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.4.conv2.fc1.weight - torch.Size([128, 256, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.4.conv2.fc1.bias - torch.Size([128]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.4.conv2.bn1.weight - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.4.conv2.bn1.bias - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.4.conv2.fc2.weight - torch.Size([512, 128, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.4.conv2.fc2.bias - torch.Size([512]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.4.conv3.weight - torch.Size([1024, 256, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.4.bn3.weight - torch.Size([1024]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.4.bn3.bias - torch.Size([1024]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.5.conv1.weight - torch.Size([256, 1024, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.5.bn1.weight - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.5.bn1.bias - torch.Size([256]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.5.conv2.conv.weight - torch.Size([512, 128, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.5.conv2.bn0.weight - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.5.conv2.bn0.bias - torch.Size([512]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.5.conv2.fc1.weight - torch.Size([128, 256, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.5.conv2.fc1.bias - torch.Size([128]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.5.conv2.bn1.weight - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.5.conv2.bn1.bias - torch.Size([128]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.5.conv2.fc2.weight - torch.Size([512, 128, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.5.conv2.fc2.bias - torch.Size([512]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer3.5.conv3.weight - torch.Size([1024, 256, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.5.bn3.weight - torch.Size([1024]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer3.5.bn3.bias - torch.Size([1024]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.0.conv1.weight - torch.Size([512, 1024, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.0.bn1.weight - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.0.bn1.bias - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.0.conv2.conv.weight - torch.Size([1024, 256, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.0.conv2.bn0.weight - torch.Size([1024]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.0.conv2.bn0.bias - torch.Size([1024]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.0.conv2.fc1.weight - torch.Size([256, 512, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.0.conv2.fc1.bias - torch.Size([256]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.0.conv2.bn1.weight - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.0.conv2.bn1.bias - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.0.conv2.fc2.weight - torch.Size([1024, 256, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.0.conv2.fc2.bias - torch.Size([1024]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.0.conv3.weight - torch.Size([2048, 512, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.0.bn3.weight - torch.Size([2048]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.0.bn3.bias - torch.Size([2048]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.0.downsample.1.weight - torch.Size([2048, 1024, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.0.downsample.2.weight - torch.Size([2048]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.0.downsample.2.bias - torch.Size([2048]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.1.conv1.weight - torch.Size([512, 2048, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.1.bn1.weight - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.1.bn1.bias - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.1.conv2.conv.weight - torch.Size([1024, 256, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.1.conv2.bn0.weight - torch.Size([1024]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.1.conv2.bn0.bias - torch.Size([1024]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.1.conv2.fc1.weight - torch.Size([256, 512, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.1.conv2.fc1.bias - torch.Size([256]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.1.conv2.bn1.weight - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.1.conv2.bn1.bias - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.1.conv2.fc2.weight - torch.Size([1024, 256, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.1.conv2.fc2.bias - torch.Size([1024]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.1.conv3.weight - torch.Size([2048, 512, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.1.bn3.weight - torch.Size([2048]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.1.bn3.bias - torch.Size([2048]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.2.conv1.weight - torch.Size([512, 2048, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.2.bn1.weight - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.2.bn1.bias - torch.Size([512]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.2.conv2.conv.weight - torch.Size([1024, 256, 3, 3]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.2.conv2.bn0.weight - torch.Size([1024]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.2.conv2.bn0.bias - torch.Size([1024]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.2.conv2.fc1.weight - torch.Size([256, 512, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.2.conv2.fc1.bias - torch.Size([256]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.2.conv2.bn1.weight - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.2.conv2.bn1.bias - torch.Size([256]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.2.conv2.fc2.weight - torch.Size([1024, 256, 1, 1]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.2.conv2.fc2.bias - torch.Size([1024]): 
+KaimingInit: a=0, mode=fan_out, nonlinearity=relu, distribution =normal, bias=0 
+
+backbone.layer4.2.conv3.weight - torch.Size([2048, 512, 1, 1]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.2.bn3.weight - torch.Size([2048]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+backbone.layer4.2.bn3.bias - torch.Size([2048]): 
+PretrainedInit: load from https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth 
+
+head.fc.weight - torch.Size([30, 2048]): 
+NormalInit: mean=0, std=0.01, bias=0 
+
+head.fc.bias - torch.Size([30]): 
+NormalInit: mean=0, std=0.01, bias=0 
+2023/06/07 18:56:24 - mmengine - WARNING - "FileClient" will be deprecated in future. Please use io functions in https://mmengine.readthedocs.io/en/latest/api/fileio.html#file-io
+2023/06/07 18:56:24 - mmengine - WARNING - "HardDiskBackend" is the alias of "LocalBackend" and the former will be deprecated in future.
+2023/06/07 18:56:24 - mmengine - INFO - Checkpoints will be saved to C:\Users\HKZ\mmpretrain\work_dirs\resnet50_finetune.
+2023/06/07 18:57:11 - mmengine - INFO - Epoch(train)   [1][100/119]  lr: 1.0000e-01  eta: 3:04:02  time: 0.2867  data_time: 0.0008  memory: 4288  loss: 3.3996
+2023/06/07 18:57:16 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 18:57:16 - mmengine - INFO - Saving checkpoint at 1 epochs
+2023/06/07 18:57:46 - mmengine - INFO - Epoch(train)   [2][100/119]  lr: 1.0000e-01  eta: 2:24:26  time: 0.2836  data_time: 0.0011  memory: 4288  loss: 3.3814
+2023/06/07 18:57:51 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 18:57:51 - mmengine - INFO - Saving checkpoint at 2 epochs
+2023/06/07 18:58:21 - mmengine - INFO - Epoch(train)   [3][100/119]  lr: 1.0000e-01  eta: 2:12:22  time: 0.2836  data_time: 0.0009  memory: 4288  loss: 3.2988
+2023/06/07 18:58:26 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 18:58:26 - mmengine - INFO - Saving checkpoint at 3 epochs
+2023/06/07 18:58:56 - mmengine - INFO - Epoch(train)   [4][100/119]  lr: 1.0000e-01  eta: 2:06:11  time: 0.2846  data_time: 0.0010  memory: 4288  loss: 3.1785
+2023/06/07 18:59:01 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 18:59:01 - mmengine - INFO - Saving checkpoint at 4 epochs
+2023/06/07 18:59:31 - mmengine - INFO - Epoch(train)   [5][100/119]  lr: 1.0000e-01  eta: 2:02:27  time: 0.2852  data_time: 0.0008  memory: 4288  loss: 3.0664
+2023/06/07 18:59:36 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 18:59:36 - mmengine - INFO - Saving checkpoint at 5 epochs
+2023/06/07 19:00:06 - mmengine - INFO - Epoch(train)   [6][100/119]  lr: 1.0000e-01  eta: 1:59:48  time: 0.2857  data_time: 0.0009  memory: 4288  loss: 3.1148
+2023/06/07 19:00:12 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:00:12 - mmengine - INFO - Saving checkpoint at 6 epochs
+2023/06/07 19:00:41 - mmengine - INFO - Epoch(train)   [7][100/119]  lr: 1.0000e-01  eta: 1:57:42  time: 0.2863  data_time: 0.0010  memory: 4288  loss: 3.0339
+2023/06/07 19:00:47 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:00:47 - mmengine - INFO - Saving checkpoint at 7 epochs
+2023/06/07 19:01:17 - mmengine - INFO - Epoch(train)   [8][100/119]  lr: 1.0000e-01  eta: 1:56:01  time: 0.2862  data_time: 0.0008  memory: 4288  loss: 2.8961
+2023/06/07 19:01:22 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:01:22 - mmengine - INFO - Saving checkpoint at 8 epochs
+2023/06/07 19:01:37 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:01:52 - mmengine - INFO - Epoch(train)   [9][100/119]  lr: 1.0000e-01  eta: 1:54:36  time: 0.2864  data_time: 0.0010  memory: 4288  loss: 2.9713
+2023/06/07 19:01:57 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:01:57 - mmengine - INFO - Saving checkpoint at 9 epochs
+2023/06/07 19:02:27 - mmengine - INFO - Epoch(train)  [10][100/119]  lr: 1.0000e-01  eta: 1:53:20  time: 0.2867  data_time: 0.0009  memory: 4288  loss: 2.9005
+2023/06/07 19:02:32 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:02:32 - mmengine - INFO - Saving checkpoint at 10 epochs
+2023/06/07 19:02:46 - mmengine - INFO - Epoch(val) [10][21/21]    accuracy/top1: 22.7343  accuracy/top5: 59.2934  data_time: 0.5215  time: 0.6153
+2023/06/07 19:03:15 - mmengine - INFO - Epoch(train)  [11][100/119]  lr: 1.0000e-01  eta: 1:52:12  time: 0.2864  data_time: 0.0007  memory: 4288  loss: 2.6223
+2023/06/07 19:03:20 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:03:20 - mmengine - INFO - Saving checkpoint at 11 epochs
+2023/06/07 19:03:50 - mmengine - INFO - Epoch(train)  [12][100/119]  lr: 1.0000e-01  eta: 1:51:10  time: 0.2866  data_time: 0.0010  memory: 4288  loss: 2.5334
+2023/06/07 19:03:56 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:03:56 - mmengine - INFO - Saving checkpoint at 12 epochs
+2023/06/07 19:04:26 - mmengine - INFO - Epoch(train)  [13][100/119]  lr: 1.0000e-01  eta: 1:50:19  time: 0.2878  data_time: 0.0009  memory: 4288  loss: 2.7720
+2023/06/07 19:04:31 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:04:31 - mmengine - INFO - Saving checkpoint at 13 epochs
+2023/06/07 19:05:01 - mmengine - INFO - Epoch(train)  [14][100/119]  lr: 1.0000e-01  eta: 1:49:24  time: 0.2861  data_time: 0.0010  memory: 4288  loss: 2.7029
+2023/06/07 19:05:07 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:05:07 - mmengine - INFO - Saving checkpoint at 14 epochs
+2023/06/07 19:05:37 - mmengine - INFO - Epoch(train)  [15][100/119]  lr: 1.0000e-01  eta: 1:48:32  time: 0.2861  data_time: 0.0007  memory: 4288  loss: 2.7129
+2023/06/07 19:05:42 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:05:42 - mmengine - INFO - Saving checkpoint at 15 epochs
+2023/06/07 19:06:12 - mmengine - INFO - Epoch(train)  [16][100/119]  lr: 1.0000e-01  eta: 1:47:42  time: 0.2861  data_time: 0.0008  memory: 4288  loss: 2.5521
+2023/06/07 19:06:17 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:06:17 - mmengine - INFO - Saving checkpoint at 16 epochs
+2023/06/07 19:06:46 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:06:47 - mmengine - INFO - Epoch(train)  [17][100/119]  lr: 1.0000e-01  eta: 1:46:54  time: 0.2859  data_time: 0.0007  memory: 4288  loss: 2.5426
+2023/06/07 19:06:52 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:06:52 - mmengine - INFO - Saving checkpoint at 17 epochs
+2023/06/07 19:07:22 - mmengine - INFO - Epoch(train)  [18][100/119]  lr: 1.0000e-01  eta: 1:46:07  time: 0.2861  data_time: 0.0008  memory: 4288  loss: 2.5269
+2023/06/07 19:07:27 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:07:27 - mmengine - INFO - Saving checkpoint at 18 epochs
+2023/06/07 19:07:57 - mmengine - INFO - Epoch(train)  [19][100/119]  lr: 1.0000e-01  eta: 1:45:23  time: 0.2869  data_time: 0.0005  memory: 4288  loss: 2.4868
+2023/06/07 19:08:02 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:08:02 - mmengine - INFO - Saving checkpoint at 19 epochs
+2023/06/07 19:08:32 - mmengine - INFO - Epoch(train)  [20][100/119]  lr: 1.0000e-01  eta: 1:44:39  time: 0.2864  data_time: 0.0007  memory: 4288  loss: 2.5857
+2023/06/07 19:08:38 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:08:38 - mmengine - INFO - Saving checkpoint at 20 epochs
+2023/06/07 19:08:41 - mmengine - INFO - Epoch(val) [20][21/21]    accuracy/top1: 35.0230  accuracy/top5: 69.1244  data_time: 0.0046  time: 0.0865
+2023/06/07 19:09:10 - mmengine - INFO - Epoch(train)  [21][100/119]  lr: 1.0000e-01  eta: 1:43:56  time: 0.2883  data_time: 0.0008  memory: 4288  loss: 2.6194
+2023/06/07 19:09:15 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:09:15 - mmengine - INFO - Saving checkpoint at 21 epochs
+2023/06/07 19:09:45 - mmengine - INFO - Epoch(train)  [22][100/119]  lr: 1.0000e-01  eta: 1:43:16  time: 0.2866  data_time: 0.0009  memory: 4288  loss: 2.3974
+2023/06/07 19:09:50 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:09:50 - mmengine - INFO - Saving checkpoint at 22 epochs
+2023/06/07 19:10:20 - mmengine - INFO - Epoch(train)  [23][100/119]  lr: 1.0000e-01  eta: 1:42:35  time: 0.2864  data_time: 0.0008  memory: 4288  loss: 2.5839
+2023/06/07 19:10:25 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:10:25 - mmengine - INFO - Saving checkpoint at 23 epochs
+2023/06/07 19:10:55 - mmengine - INFO - Epoch(train)  [24][100/119]  lr: 1.0000e-01  eta: 1:41:55  time: 0.2866  data_time: 0.0009  memory: 4288  loss: 2.4809
+2023/06/07 19:11:01 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:11:01 - mmengine - INFO - Saving checkpoint at 24 epochs
+2023/06/07 19:11:31 - mmengine - INFO - Epoch(train)  [25][100/119]  lr: 1.0000e-01  eta: 1:41:15  time: 0.2866  data_time: 0.0009  memory: 4288  loss: 2.4476
+2023/06/07 19:11:36 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:11:36 - mmengine - INFO - Saving checkpoint at 25 epochs
+2023/06/07 19:11:44 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:12:06 - mmengine - INFO - Epoch(train)  [26][100/119]  lr: 1.0000e-01  eta: 1:40:35  time: 0.2866  data_time: 0.0009  memory: 4288  loss: 2.5230
+2023/06/07 19:12:11 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:12:11 - mmengine - INFO - Saving checkpoint at 26 epochs
+2023/06/07 19:12:41 - mmengine - INFO - Epoch(train)  [27][100/119]  lr: 1.0000e-01  eta: 1:39:57  time: 0.2870  data_time: 0.0009  memory: 4288  loss: 2.5294
+2023/06/07 19:12:46 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:12:46 - mmengine - INFO - Saving checkpoint at 27 epochs
+2023/06/07 19:13:16 - mmengine - INFO - Epoch(train)  [28][100/119]  lr: 1.0000e-01  eta: 1:39:18  time: 0.2864  data_time: 0.0008  memory: 4288  loss: 2.2444
+2023/06/07 19:13:22 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:13:22 - mmengine - INFO - Saving checkpoint at 28 epochs
+2023/06/07 19:13:52 - mmengine - INFO - Epoch(train)  [29][100/119]  lr: 1.0000e-01  eta: 1:38:40  time: 0.2865  data_time: 0.0008  memory: 4288  loss: 2.2858
+2023/06/07 19:13:57 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:13:57 - mmengine - INFO - Saving checkpoint at 29 epochs
+2023/06/07 19:14:27 - mmengine - INFO - Epoch(train)  [30][100/119]  lr: 1.0000e-01  eta: 1:38:02  time: 0.2873  data_time: 0.0009  memory: 4288  loss: 2.3619
+2023/06/07 19:14:32 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:14:32 - mmengine - INFO - Saving checkpoint at 30 epochs
+2023/06/07 19:14:35 - mmengine - INFO - Epoch(val) [30][21/21]    accuracy/top1: 41.9355  accuracy/top5: 72.9647  data_time: 0.0046  time: 0.0862
+2023/06/07 19:15:04 - mmengine - INFO - Epoch(train)  [31][100/119]  lr: 1.0000e-02  eta: 1:37:24  time: 0.2867  data_time: 0.0008  memory: 4288  loss: 2.3049
+2023/06/07 19:15:09 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:15:09 - mmengine - INFO - Saving checkpoint at 31 epochs
+2023/06/07 19:15:39 - mmengine - INFO - Epoch(train)  [32][100/119]  lr: 1.0000e-02  eta: 1:36:47  time: 0.2866  data_time: 0.0009  memory: 4288  loss: 2.3652
+2023/06/07 19:15:45 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:15:45 - mmengine - INFO - Saving checkpoint at 32 epochs
+2023/06/07 19:16:15 - mmengine - INFO - Epoch(train)  [33][100/119]  lr: 1.0000e-02  eta: 1:36:09  time: 0.2870  data_time: 0.0009  memory: 4288  loss: 2.1744
+2023/06/07 19:16:20 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:16:20 - mmengine - INFO - Saving checkpoint at 33 epochs
+2023/06/07 19:16:42 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:16:50 - mmengine - INFO - Epoch(train)  [34][100/119]  lr: 1.0000e-02  eta: 1:35:32  time: 0.2869  data_time: 0.0010  memory: 4288  loss: 1.9907
+2023/06/07 19:16:55 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:16:55 - mmengine - INFO - Saving checkpoint at 34 epochs
+2023/06/07 19:17:25 - mmengine - INFO - Epoch(train)  [35][100/119]  lr: 1.0000e-02  eta: 1:34:55  time: 0.2871  data_time: 0.0009  memory: 4288  loss: 2.0859
+2023/06/07 19:17:30 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:17:30 - mmengine - INFO - Saving checkpoint at 35 epochs
+2023/06/07 19:18:01 - mmengine - INFO - Epoch(train)  [36][100/119]  lr: 1.0000e-02  eta: 1:34:19  time: 0.2872  data_time: 0.0008  memory: 4288  loss: 2.2850
+2023/06/07 19:18:06 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:18:06 - mmengine - INFO - Saving checkpoint at 36 epochs
+2023/06/07 19:18:36 - mmengine - INFO - Epoch(train)  [37][100/119]  lr: 1.0000e-02  eta: 1:33:42  time: 0.2867  data_time: 0.0009  memory: 4288  loss: 2.1905
+2023/06/07 19:18:41 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:18:41 - mmengine - INFO - Saving checkpoint at 37 epochs
+2023/06/07 19:19:11 - mmengine - INFO - Epoch(train)  [38][100/119]  lr: 1.0000e-02  eta: 1:33:06  time: 0.2867  data_time: 0.0011  memory: 4288  loss: 1.9736
+2023/06/07 19:19:16 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:19:16 - mmengine - INFO - Saving checkpoint at 38 epochs
+2023/06/07 19:19:46 - mmengine - INFO - Epoch(train)  [39][100/119]  lr: 1.0000e-02  eta: 1:32:29  time: 0.2866  data_time: 0.0008  memory: 4288  loss: 1.8730
+2023/06/07 19:19:51 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:19:51 - mmengine - INFO - Saving checkpoint at 39 epochs
+2023/06/07 19:20:21 - mmengine - INFO - Epoch(train)  [40][100/119]  lr: 1.0000e-02  eta: 1:31:53  time: 0.2864  data_time: 0.0008  memory: 4288  loss: 1.9889
+2023/06/07 19:20:27 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:20:27 - mmengine - INFO - Saving checkpoint at 40 epochs
+2023/06/07 19:20:30 - mmengine - INFO - Epoch(val) [40][21/21]    accuracy/top1: 53.6098  accuracy/top5: 79.4163  data_time: 0.0044  time: 0.0857
+2023/06/07 19:20:59 - mmengine - INFO - Epoch(train)  [41][100/119]  lr: 1.0000e-02  eta: 1:31:17  time: 0.2867  data_time: 0.0009  memory: 4288  loss: 2.1424
+2023/06/07 19:21:04 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:21:04 - mmengine - INFO - Saving checkpoint at 41 epochs
+2023/06/07 19:21:34 - mmengine - INFO - Epoch(train)  [42][100/119]  lr: 1.0000e-02  eta: 1:30:41  time: 0.2870  data_time: 0.0009  memory: 4288  loss: 2.0746
+2023/06/07 19:21:39 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:21:39 - mmengine - INFO - Saving checkpoint at 42 epochs
+2023/06/07 19:21:41 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:22:09 - mmengine - INFO - Epoch(train)  [43][100/119]  lr: 1.0000e-02  eta: 1:30:05  time: 0.2870  data_time: 0.0009  memory: 4288  loss: 2.1554
+2023/06/07 19:22:14 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:22:14 - mmengine - INFO - Saving checkpoint at 43 epochs
+2023/06/07 19:22:44 - mmengine - INFO - Epoch(train)  [44][100/119]  lr: 1.0000e-02  eta: 1:29:29  time: 0.2868  data_time: 0.0009  memory: 4288  loss: 1.9379
+2023/06/07 19:22:50 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:22:50 - mmengine - INFO - Saving checkpoint at 44 epochs
+2023/06/07 19:23:20 - mmengine - INFO - Epoch(train)  [45][100/119]  lr: 1.0000e-02  eta: 1:28:53  time: 0.2866  data_time: 0.0007  memory: 4288  loss: 2.1125
+2023/06/07 19:23:25 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:23:25 - mmengine - INFO - Saving checkpoint at 45 epochs
+2023/06/07 19:23:55 - mmengine - INFO - Epoch(train)  [46][100/119]  lr: 1.0000e-02  eta: 1:28:17  time: 0.2873  data_time: 0.0009  memory: 4288  loss: 2.3599
+2023/06/07 19:24:00 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:24:00 - mmengine - INFO - Saving checkpoint at 46 epochs
+2023/06/07 19:24:30 - mmengine - INFO - Epoch(train)  [47][100/119]  lr: 1.0000e-02  eta: 1:27:42  time: 0.2876  data_time: 0.0011  memory: 4288  loss: 2.1784
+2023/06/07 19:24:35 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:24:35 - mmengine - INFO - Saving checkpoint at 47 epochs
+2023/06/07 19:25:05 - mmengine - INFO - Epoch(train)  [48][100/119]  lr: 1.0000e-02  eta: 1:27:06  time: 0.2864  data_time: 0.0008  memory: 4288  loss: 2.2605
+2023/06/07 19:25:11 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:25:11 - mmengine - INFO - Saving checkpoint at 48 epochs
+2023/06/07 19:25:41 - mmengine - INFO - Epoch(train)  [49][100/119]  lr: 1.0000e-02  eta: 1:26:33  time: 0.2991  data_time: 0.0008  memory: 4288  loss: 1.7289
+2023/06/07 19:25:47 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:25:47 - mmengine - INFO - Saving checkpoint at 49 epochs
+2023/06/07 19:26:17 - mmengine - INFO - Epoch(train)  [50][100/119]  lr: 1.0000e-02  eta: 1:25:59  time: 0.2861  data_time: 0.0009  memory: 4288  loss: 1.8297
+2023/06/07 19:26:22 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:26:22 - mmengine - INFO - Saving checkpoint at 50 epochs
+2023/06/07 19:26:26 - mmengine - INFO - Epoch(val) [50][21/21]    accuracy/top1: 55.4531  accuracy/top5: 78.8018  data_time: 0.0044  time: 0.0860
+2023/06/07 19:26:40 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:26:54 - mmengine - INFO - Epoch(train)  [51][100/119]  lr: 1.0000e-02  eta: 1:25:24  time: 0.2862  data_time: 0.0010  memory: 4288  loss: 1.8877
+2023/06/07 19:27:00 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:27:00 - mmengine - INFO - Saving checkpoint at 51 epochs
+2023/06/07 19:27:29 - mmengine - INFO - Epoch(train)  [52][100/119]  lr: 1.0000e-02  eta: 1:24:48  time: 0.2863  data_time: 0.0008  memory: 4288  loss: 2.0826
+2023/06/07 19:27:35 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:27:35 - mmengine - INFO - Saving checkpoint at 52 epochs
+2023/06/07 19:28:05 - mmengine - INFO - Epoch(train)  [53][100/119]  lr: 1.0000e-02  eta: 1:24:12  time: 0.2859  data_time: 0.0009  memory: 4288  loss: 1.9446
+2023/06/07 19:28:10 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:28:10 - mmengine - INFO - Saving checkpoint at 53 epochs
+2023/06/07 19:28:40 - mmengine - INFO - Epoch(train)  [54][100/119]  lr: 1.0000e-02  eta: 1:23:37  time: 0.2859  data_time: 0.0007  memory: 4288  loss: 2.2050
+2023/06/07 19:28:45 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:28:45 - mmengine - INFO - Saving checkpoint at 54 epochs
+2023/06/07 19:29:15 - mmengine - INFO - Epoch(train)  [55][100/119]  lr: 1.0000e-02  eta: 1:23:01  time: 0.2860  data_time: 0.0010  memory: 4288  loss: 1.8692
+2023/06/07 19:29:20 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:29:20 - mmengine - INFO - Saving checkpoint at 55 epochs
+2023/06/07 19:29:50 - mmengine - INFO - Epoch(train)  [56][100/119]  lr: 1.0000e-02  eta: 1:22:26  time: 0.2863  data_time: 0.0011  memory: 4288  loss: 1.7196
+2023/06/07 19:29:55 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:29:55 - mmengine - INFO - Saving checkpoint at 56 epochs
+2023/06/07 19:30:25 - mmengine - INFO - Epoch(train)  [57][100/119]  lr: 1.0000e-02  eta: 1:21:51  time: 0.2863  data_time: 0.0009  memory: 4288  loss: 1.7678
+2023/06/07 19:30:31 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:30:31 - mmengine - INFO - Saving checkpoint at 57 epochs
+2023/06/07 19:31:01 - mmengine - INFO - Epoch(train)  [58][100/119]  lr: 1.0000e-02  eta: 1:21:15  time: 0.2861  data_time: 0.0009  memory: 4288  loss: 2.2792
+2023/06/07 19:31:06 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:31:06 - mmengine - INFO - Saving checkpoint at 58 epochs
+2023/06/07 19:31:35 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:31:36 - mmengine - INFO - Epoch(train)  [59][100/119]  lr: 1.0000e-02  eta: 1:20:40  time: 0.2863  data_time: 0.0008  memory: 4288  loss: 2.1800
+2023/06/07 19:31:41 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:31:41 - mmengine - INFO - Saving checkpoint at 59 epochs
+2023/06/07 19:32:11 - mmengine - INFO - Epoch(train)  [60][100/119]  lr: 1.0000e-02  eta: 1:20:06  time: 0.2871  data_time: 0.0008  memory: 4288  loss: 2.0526
+2023/06/07 19:32:16 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:32:16 - mmengine - INFO - Saving checkpoint at 60 epochs
+2023/06/07 19:32:19 - mmengine - INFO - Epoch(val) [60][21/21]    accuracy/top1: 45.7757  accuracy/top5: 76.4977  data_time: 0.0048  time: 0.0864
+2023/06/07 19:32:48 - mmengine - INFO - Epoch(train)  [61][100/119]  lr: 1.0000e-03  eta: 1:19:31  time: 0.2872  data_time: 0.0008  memory: 4288  loss: 2.2417
+2023/06/07 19:32:54 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:32:54 - mmengine - INFO - Saving checkpoint at 61 epochs
+2023/06/07 19:33:24 - mmengine - INFO - Epoch(train)  [62][100/119]  lr: 1.0000e-03  eta: 1:18:56  time: 0.2881  data_time: 0.0011  memory: 4288  loss: 2.2052
+2023/06/07 19:33:29 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:33:29 - mmengine - INFO - Saving checkpoint at 62 epochs
+2023/06/07 19:33:59 - mmengine - INFO - Epoch(train)  [63][100/119]  lr: 1.0000e-03  eta: 1:18:21  time: 0.2881  data_time: 0.0010  memory: 4288  loss: 2.0254
+2023/06/07 19:34:04 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:34:04 - mmengine - INFO - Saving checkpoint at 63 epochs
+2023/06/07 19:34:34 - mmengine - INFO - Epoch(train)  [64][100/119]  lr: 1.0000e-03  eta: 1:17:46  time: 0.2870  data_time: 0.0008  memory: 4288  loss: 2.1869
+2023/06/07 19:34:40 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:34:40 - mmengine - INFO - Saving checkpoint at 64 epochs
+2023/06/07 19:35:10 - mmengine - INFO - Epoch(train)  [65][100/119]  lr: 1.0000e-03  eta: 1:17:12  time: 0.2872  data_time: 0.0008  memory: 4288  loss: 1.9751
+2023/06/07 19:35:15 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:35:15 - mmengine - INFO - Saving checkpoint at 65 epochs
+2023/06/07 19:35:45 - mmengine - INFO - Epoch(train)  [66][100/119]  lr: 1.0000e-03  eta: 1:16:37  time: 0.2874  data_time: 0.0010  memory: 4288  loss: 1.9394
+2023/06/07 19:35:50 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:35:50 - mmengine - INFO - Saving checkpoint at 66 epochs
+2023/06/07 19:36:20 - mmengine - INFO - Epoch(train)  [67][100/119]  lr: 1.0000e-03  eta: 1:16:02  time: 0.2871  data_time: 0.0010  memory: 4288  loss: 2.2021
+2023/06/07 19:36:26 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:36:26 - mmengine - INFO - Saving checkpoint at 67 epochs
+2023/06/07 19:36:35 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:36:56 - mmengine - INFO - Epoch(train)  [68][100/119]  lr: 1.0000e-03  eta: 1:15:28  time: 0.2928  data_time: 0.0008  memory: 4288  loss: 1.9069
+2023/06/07 19:37:01 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:37:01 - mmengine - INFO - Saving checkpoint at 68 epochs
+2023/06/07 19:37:31 - mmengine - INFO - Epoch(train)  [69][100/119]  lr: 1.0000e-03  eta: 1:14:53  time: 0.2860  data_time: 0.0009  memory: 4288  loss: 2.1163
+2023/06/07 19:37:36 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:37:36 - mmengine - INFO - Saving checkpoint at 69 epochs
+2023/06/07 19:38:06 - mmengine - INFO - Epoch(train)  [70][100/119]  lr: 1.0000e-03  eta: 1:14:18  time: 0.2859  data_time: 0.0008  memory: 4288  loss: 1.9093
+2023/06/07 19:38:11 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:38:11 - mmengine - INFO - Saving checkpoint at 70 epochs
+2023/06/07 19:38:15 - mmengine - INFO - Epoch(val) [70][21/21]    accuracy/top1: 55.2995  accuracy/top5: 80.0307  data_time: 0.0045  time: 0.0855
+2023/06/07 19:38:43 - mmengine - INFO - Epoch(train)  [71][100/119]  lr: 1.0000e-03  eta: 1:13:43  time: 0.2858  data_time: 0.0008  memory: 4288  loss: 1.7511
+2023/06/07 19:38:48 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:38:48 - mmengine - INFO - Saving checkpoint at 71 epochs
+2023/06/07 19:39:19 - mmengine - INFO - Epoch(train)  [72][100/119]  lr: 1.0000e-03  eta: 1:13:09  time: 0.2861  data_time: 0.0010  memory: 4288  loss: 1.8185
+2023/06/07 19:39:24 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:39:24 - mmengine - INFO - Saving checkpoint at 72 epochs
+2023/06/07 19:39:55 - mmengine - INFO - Epoch(train)  [73][100/119]  lr: 1.0000e-03  eta: 1:12:35  time: 0.2864  data_time: 0.0008  memory: 4288  loss: 1.9742
+2023/06/07 19:40:00 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:40:00 - mmengine - INFO - Saving checkpoint at 73 epochs
+2023/06/07 19:40:30 - mmengine - INFO - Epoch(train)  [74][100/119]  lr: 1.0000e-03  eta: 1:12:00  time: 0.2861  data_time: 0.0010  memory: 4288  loss: 1.8355
+2023/06/07 19:40:35 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:40:35 - mmengine - INFO - Saving checkpoint at 74 epochs
+2023/06/07 19:41:05 - mmengine - INFO - Epoch(train)  [75][100/119]  lr: 1.0000e-03  eta: 1:11:25  time: 0.2879  data_time: 0.0009  memory: 4288  loss: 1.8178
+2023/06/07 19:41:10 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:41:10 - mmengine - INFO - Saving checkpoint at 75 epochs
+2023/06/07 19:41:33 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:41:40 - mmengine - INFO - Epoch(train)  [76][100/119]  lr: 1.0000e-03  eta: 1:10:51  time: 0.2862  data_time: 0.0009  memory: 4288  loss: 1.8786
+2023/06/07 19:41:45 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:41:45 - mmengine - INFO - Saving checkpoint at 76 epochs
+2023/06/07 19:42:15 - mmengine - INFO - Epoch(train)  [77][100/119]  lr: 1.0000e-03  eta: 1:10:16  time: 0.2858  data_time: 0.0009  memory: 4288  loss: 2.0887
+2023/06/07 19:42:20 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:42:20 - mmengine - INFO - Saving checkpoint at 77 epochs
+2023/06/07 19:42:50 - mmengine - INFO - Epoch(train)  [78][100/119]  lr: 1.0000e-03  eta: 1:09:41  time: 0.2861  data_time: 0.0009  memory: 4288  loss: 2.1043
+2023/06/07 19:42:55 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:42:55 - mmengine - INFO - Saving checkpoint at 78 epochs
+2023/06/07 19:43:25 - mmengine - INFO - Epoch(train)  [79][100/119]  lr: 1.0000e-03  eta: 1:09:06  time: 0.2860  data_time: 0.0009  memory: 4288  loss: 1.7168
+2023/06/07 19:43:31 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:43:31 - mmengine - INFO - Saving checkpoint at 79 epochs
+2023/06/07 19:44:01 - mmengine - INFO - Epoch(train)  [80][100/119]  lr: 1.0000e-03  eta: 1:08:32  time: 0.2861  data_time: 0.0008  memory: 4288  loss: 1.6777
+2023/06/07 19:44:06 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:44:06 - mmengine - INFO - Saving checkpoint at 80 epochs
+2023/06/07 19:44:09 - mmengine - INFO - Epoch(val) [80][21/21]    accuracy/top1: 57.1429  accuracy/top5: 79.8771  data_time: 0.0045  time: 0.0853
+2023/06/07 19:44:38 - mmengine - INFO - Epoch(train)  [81][100/119]  lr: 1.0000e-03  eta: 1:07:57  time: 0.2861  data_time: 0.0009  memory: 4288  loss: 2.1616
+2023/06/07 19:44:43 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:44:43 - mmengine - INFO - Saving checkpoint at 81 epochs
+2023/06/07 19:45:13 - mmengine - INFO - Epoch(train)  [82][100/119]  lr: 1.0000e-03  eta: 1:07:22  time: 0.2860  data_time: 0.0010  memory: 4288  loss: 1.6543
+2023/06/07 19:45:18 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:45:18 - mmengine - INFO - Saving checkpoint at 82 epochs
+2023/06/07 19:45:48 - mmengine - INFO - Epoch(train)  [83][100/119]  lr: 1.0000e-03  eta: 1:06:48  time: 0.2862  data_time: 0.0007  memory: 4288  loss: 1.6071
+2023/06/07 19:45:53 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:45:53 - mmengine - INFO - Saving checkpoint at 83 epochs
+2023/06/07 19:46:23 - mmengine - INFO - Epoch(train)  [84][100/119]  lr: 1.0000e-03  eta: 1:06:13  time: 0.2864  data_time: 0.0008  memory: 4288  loss: 1.9310
+2023/06/07 19:46:29 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:46:29 - mmengine - INFO - Saving checkpoint at 84 epochs
+2023/06/07 19:46:31 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:46:59 - mmengine - INFO - Epoch(train)  [85][100/119]  lr: 1.0000e-03  eta: 1:05:38  time: 0.2860  data_time: 0.0009  memory: 4288  loss: 1.8771
+2023/06/07 19:47:04 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:47:04 - mmengine - INFO - Saving checkpoint at 85 epochs
+2023/06/07 19:47:34 - mmengine - INFO - Epoch(train)  [86][100/119]  lr: 1.0000e-03  eta: 1:05:04  time: 0.2869  data_time: 0.0009  memory: 4288  loss: 1.7845
+2023/06/07 19:47:39 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:47:39 - mmengine - INFO - Saving checkpoint at 86 epochs
+2023/06/07 19:48:09 - mmengine - INFO - Epoch(train)  [87][100/119]  lr: 1.0000e-03  eta: 1:04:30  time: 0.2870  data_time: 0.0009  memory: 4288  loss: 2.0447
+2023/06/07 19:48:14 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:48:14 - mmengine - INFO - Saving checkpoint at 87 epochs
+2023/06/07 19:48:45 - mmengine - INFO - Epoch(train)  [88][100/119]  lr: 1.0000e-03  eta: 1:03:55  time: 0.2870  data_time: 0.0009  memory: 4288  loss: 1.9436
+2023/06/07 19:48:50 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:48:50 - mmengine - INFO - Saving checkpoint at 88 epochs
+2023/06/07 19:49:20 - mmengine - INFO - Epoch(train)  [89][100/119]  lr: 1.0000e-03  eta: 1:03:21  time: 0.2868  data_time: 0.0008  memory: 4288  loss: 2.2053
+2023/06/07 19:49:25 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:49:25 - mmengine - INFO - Saving checkpoint at 89 epochs
+2023/06/07 19:49:55 - mmengine - INFO - Epoch(train)  [90][100/119]  lr: 1.0000e-03  eta: 1:02:46  time: 0.2940  data_time: 0.0009  memory: 4288  loss: 1.7682
+2023/06/07 19:50:01 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:50:01 - mmengine - INFO - Saving checkpoint at 90 epochs
+2023/06/07 19:50:04 - mmengine - INFO - Epoch(val) [90][21/21]    accuracy/top1: 57.1429  accuracy/top5: 79.8771  data_time: 0.0054  time: 0.0891
+2023/06/07 19:50:33 - mmengine - INFO - Epoch(train)  [91][100/119]  lr: 1.0000e-04  eta: 1:02:12  time: 0.2873  data_time: 0.0009  memory: 4288  loss: 1.8143
+2023/06/07 19:50:38 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:50:38 - mmengine - INFO - Saving checkpoint at 91 epochs
+2023/06/07 19:51:08 - mmengine - INFO - Epoch(train)  [92][100/119]  lr: 1.0000e-04  eta: 1:01:38  time: 0.2870  data_time: 0.0009  memory: 4288  loss: 2.0016
+2023/06/07 19:51:14 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:51:14 - mmengine - INFO - Saving checkpoint at 92 epochs
+2023/06/07 19:51:30 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:51:44 - mmengine - INFO - Epoch(train)  [93][100/119]  lr: 1.0000e-04  eta: 1:01:04  time: 0.2873  data_time: 0.0009  memory: 4288  loss: 1.8720
+2023/06/07 19:51:49 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:51:49 - mmengine - INFO - Saving checkpoint at 93 epochs
+2023/06/07 19:52:19 - mmengine - INFO - Epoch(train)  [94][100/119]  lr: 1.0000e-04  eta: 1:00:29  time: 0.2869  data_time: 0.0008  memory: 4288  loss: 1.7983
+2023/06/07 19:52:24 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:52:24 - mmengine - INFO - Saving checkpoint at 94 epochs
+2023/06/07 19:52:54 - mmengine - INFO - Epoch(train)  [95][100/119]  lr: 1.0000e-04  eta: 0:59:55  time: 0.2870  data_time: 0.0008  memory: 4288  loss: 1.7937
+2023/06/07 19:52:59 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:52:59 - mmengine - INFO - Saving checkpoint at 95 epochs
+2023/06/07 19:53:30 - mmengine - INFO - Epoch(train)  [96][100/119]  lr: 1.0000e-04  eta: 0:59:20  time: 0.2871  data_time: 0.0009  memory: 4288  loss: 2.0113
+2023/06/07 19:53:35 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:53:35 - mmengine - INFO - Saving checkpoint at 96 epochs
+2023/06/07 19:54:05 - mmengine - INFO - Epoch(train)  [97][100/119]  lr: 1.0000e-04  eta: 0:58:46  time: 0.2872  data_time: 0.0009  memory: 4288  loss: 1.7789
+2023/06/07 19:54:10 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:54:10 - mmengine - INFO - Saving checkpoint at 97 epochs
+2023/06/07 19:54:40 - mmengine - INFO - Epoch(train)  [98][100/119]  lr: 1.0000e-04  eta: 0:58:12  time: 0.2873  data_time: 0.0009  memory: 4288  loss: 1.7438
+2023/06/07 19:54:45 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:54:45 - mmengine - INFO - Saving checkpoint at 98 epochs
+2023/06/07 19:55:16 - mmengine - INFO - Epoch(train)  [99][100/119]  lr: 1.0000e-04  eta: 0:57:37  time: 0.2871  data_time: 0.0007  memory: 4288  loss: 2.1231
+2023/06/07 19:55:21 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:55:21 - mmengine - INFO - Saving checkpoint at 99 epochs
+2023/06/07 19:55:51 - mmengine - INFO - Epoch(train) [100][100/119]  lr: 1.0000e-04  eta: 0:57:03  time: 0.2872  data_time: 0.0009  memory: 4288  loss: 1.6165
+2023/06/07 19:55:56 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:55:56 - mmengine - INFO - Saving checkpoint at 100 epochs
+2023/06/07 19:55:59 - mmengine - INFO - Epoch(val) [100][21/21]    accuracy/top1: 58.6790  accuracy/top5: 80.6452  data_time: 0.0044  time: 0.0858
+2023/06/07 19:56:28 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:56:28 - mmengine - INFO - Epoch(train) [101][100/119]  lr: 1.0000e-04  eta: 0:56:29  time: 0.2874  data_time: 0.0009  memory: 4288  loss: 1.9674
+2023/06/07 19:56:33 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:56:33 - mmengine - INFO - Saving checkpoint at 101 epochs
+2023/06/07 19:57:03 - mmengine - INFO - Epoch(train) [102][100/119]  lr: 1.0000e-04  eta: 0:55:55  time: 0.2876  data_time: 0.0009  memory: 4288  loss: 2.0108
+2023/06/07 19:57:09 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:57:09 - mmengine - INFO - Saving checkpoint at 102 epochs
+2023/06/07 19:57:39 - mmengine - INFO - Epoch(train) [103][100/119]  lr: 1.0000e-04  eta: 0:55:20  time: 0.2874  data_time: 0.0007  memory: 4288  loss: 1.8451
+2023/06/07 19:57:44 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:57:44 - mmengine - INFO - Saving checkpoint at 103 epochs
+2023/06/07 19:58:14 - mmengine - INFO - Epoch(train) [104][100/119]  lr: 1.0000e-04  eta: 0:54:46  time: 0.2870  data_time: 0.0008  memory: 4288  loss: 1.8021
+2023/06/07 19:58:19 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:58:19 - mmengine - INFO - Saving checkpoint at 104 epochs
+2023/06/07 19:58:49 - mmengine - INFO - Epoch(train) [105][100/119]  lr: 1.0000e-04  eta: 0:54:12  time: 0.2869  data_time: 0.0007  memory: 4288  loss: 2.0897
+2023/06/07 19:58:55 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:58:55 - mmengine - INFO - Saving checkpoint at 105 epochs
+2023/06/07 19:59:25 - mmengine - INFO - Epoch(train) [106][100/119]  lr: 1.0000e-04  eta: 0:53:38  time: 0.2871  data_time: 0.0009  memory: 4288  loss: 1.7618
+2023/06/07 19:59:30 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 19:59:30 - mmengine - INFO - Saving checkpoint at 106 epochs
+2023/06/07 20:00:00 - mmengine - INFO - Epoch(train) [107][100/119]  lr: 1.0000e-04  eta: 0:53:03  time: 0.2877  data_time: 0.0004  memory: 4288  loss: 1.9593
+2023/06/07 20:00:05 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:00:05 - mmengine - INFO - Saving checkpoint at 107 epochs
+2023/06/07 20:00:35 - mmengine - INFO - Epoch(train) [108][100/119]  lr: 1.0000e-04  eta: 0:52:29  time: 0.2873  data_time: 0.0009  memory: 4288  loss: 1.9680
+2023/06/07 20:00:41 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:00:41 - mmengine - INFO - Saving checkpoint at 108 epochs
+2023/06/07 20:01:11 - mmengine - INFO - Epoch(train) [109][100/119]  lr: 1.0000e-04  eta: 0:51:55  time: 0.2870  data_time: 0.0010  memory: 4288  loss: 1.5944
+2023/06/07 20:01:16 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:01:16 - mmengine - INFO - Saving checkpoint at 109 epochs
+2023/06/07 20:01:26 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:01:46 - mmengine - INFO - Epoch(train) [110][100/119]  lr: 1.0000e-04  eta: 0:51:20  time: 0.2875  data_time: 0.0010  memory: 4288  loss: 1.7673
+2023/06/07 20:01:51 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:01:51 - mmengine - INFO - Saving checkpoint at 110 epochs
+2023/06/07 20:01:54 - mmengine - INFO - Epoch(val) [110][21/21]    accuracy/top1: 59.1398  accuracy/top5: 80.6452  data_time: 0.0044  time: 0.0856
+2023/06/07 20:02:23 - mmengine - INFO - Epoch(train) [111][100/119]  lr: 1.0000e-04  eta: 0:50:46  time: 0.2874  data_time: 0.0008  memory: 4288  loss: 1.8376
+2023/06/07 20:02:28 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:02:28 - mmengine - INFO - Saving checkpoint at 111 epochs
+2023/06/07 20:02:59 - mmengine - INFO - Epoch(train) [112][100/119]  lr: 1.0000e-04  eta: 0:50:12  time: 0.2875  data_time: 0.0009  memory: 4288  loss: 2.0621
+2023/06/07 20:03:04 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:03:04 - mmengine - INFO - Saving checkpoint at 112 epochs
+2023/06/07 20:03:34 - mmengine - INFO - Epoch(train) [113][100/119]  lr: 1.0000e-04  eta: 0:49:38  time: 0.2872  data_time: 0.0008  memory: 4288  loss: 1.7815
+2023/06/07 20:03:39 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:03:39 - mmengine - INFO - Saving checkpoint at 113 epochs
+2023/06/07 20:04:09 - mmengine - INFO - Epoch(train) [114][100/119]  lr: 1.0000e-04  eta: 0:49:03  time: 0.2873  data_time: 0.0009  memory: 4288  loss: 1.6370
+2023/06/07 20:04:14 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:04:14 - mmengine - INFO - Saving checkpoint at 114 epochs
+2023/06/07 20:04:45 - mmengine - INFO - Epoch(train) [115][100/119]  lr: 1.0000e-04  eta: 0:48:29  time: 0.2871  data_time: 0.0010  memory: 4288  loss: 1.9322
+2023/06/07 20:04:50 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:04:50 - mmengine - INFO - Saving checkpoint at 115 epochs
+2023/06/07 20:05:20 - mmengine - INFO - Epoch(train) [116][100/119]  lr: 1.0000e-04  eta: 0:47:55  time: 0.2872  data_time: 0.0007  memory: 4288  loss: 1.8177
+2023/06/07 20:05:25 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:05:25 - mmengine - INFO - Saving checkpoint at 116 epochs
+2023/06/07 20:05:55 - mmengine - INFO - Epoch(train) [117][100/119]  lr: 1.0000e-04  eta: 0:47:21  time: 0.2873  data_time: 0.0009  memory: 4288  loss: 1.8803
+2023/06/07 20:06:01 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:06:01 - mmengine - INFO - Saving checkpoint at 117 epochs
+2023/06/07 20:06:24 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:06:31 - mmengine - INFO - Epoch(train) [118][100/119]  lr: 1.0000e-04  eta: 0:46:47  time: 0.2905  data_time: 0.0010  memory: 4288  loss: 2.3684
+2023/06/07 20:06:36 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:06:36 - mmengine - INFO - Saving checkpoint at 118 epochs
+2023/06/07 20:07:06 - mmengine - INFO - Epoch(train) [119][100/119]  lr: 1.0000e-04  eta: 0:46:12  time: 0.2874  data_time: 0.0010  memory: 4288  loss: 1.6959
+2023/06/07 20:07:11 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:07:11 - mmengine - INFO - Saving checkpoint at 119 epochs
+2023/06/07 20:07:41 - mmengine - INFO - Epoch(train) [120][100/119]  lr: 1.0000e-04  eta: 0:45:38  time: 0.2875  data_time: 0.0009  memory: 4288  loss: 1.7808
+2023/06/07 20:07:47 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:07:47 - mmengine - INFO - Saving checkpoint at 120 epochs
+2023/06/07 20:07:50 - mmengine - INFO - Epoch(val) [120][21/21]    accuracy/top1: 58.6790  accuracy/top5: 80.4915  data_time: 0.0046  time: 0.0860
+2023/06/07 20:08:19 - mmengine - INFO - Epoch(train) [121][100/119]  lr: 1.0000e-04  eta: 0:45:04  time: 0.2873  data_time: 0.0007  memory: 4288  loss: 1.7896
+2023/06/07 20:08:24 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:08:24 - mmengine - INFO - Saving checkpoint at 121 epochs
+2023/06/07 20:08:54 - mmengine - INFO - Epoch(train) [122][100/119]  lr: 1.0000e-04  eta: 0:44:30  time: 0.2876  data_time: 0.0010  memory: 4288  loss: 1.7868
+2023/06/07 20:08:59 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:08:59 - mmengine - INFO - Saving checkpoint at 122 epochs
+2023/06/07 20:09:29 - mmengine - INFO - Epoch(train) [123][100/119]  lr: 1.0000e-04  eta: 0:43:55  time: 0.2869  data_time: 0.0009  memory: 4288  loss: 1.7245
+2023/06/07 20:09:34 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:09:34 - mmengine - INFO - Saving checkpoint at 123 epochs
+2023/06/07 20:10:04 - mmengine - INFO - Epoch(train) [124][100/119]  lr: 1.0000e-04  eta: 0:43:21  time: 0.2863  data_time: 0.0010  memory: 4288  loss: 1.8639
+2023/06/07 20:10:10 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:10:10 - mmengine - INFO - Saving checkpoint at 124 epochs
+2023/06/07 20:10:40 - mmengine - INFO - Epoch(train) [125][100/119]  lr: 1.0000e-04  eta: 0:42:47  time: 0.2865  data_time: 0.0010  memory: 4288  loss: 1.9235
+2023/06/07 20:10:45 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:10:45 - mmengine - INFO - Saving checkpoint at 125 epochs
+2023/06/07 20:11:15 - mmengine - INFO - Epoch(train) [126][100/119]  lr: 1.0000e-04  eta: 0:42:12  time: 0.2864  data_time: 0.0008  memory: 4288  loss: 2.0258
+2023/06/07 20:11:20 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:11:20 - mmengine - INFO - Saving checkpoint at 126 epochs
+2023/06/07 20:11:23 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:11:50 - mmengine - INFO - Epoch(train) [127][100/119]  lr: 1.0000e-04  eta: 0:41:38  time: 0.2863  data_time: 0.0007  memory: 4288  loss: 1.7264
+2023/06/07 20:11:55 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:11:55 - mmengine - INFO - Saving checkpoint at 127 epochs
+2023/06/07 20:12:25 - mmengine - INFO - Epoch(train) [128][100/119]  lr: 1.0000e-04  eta: 0:41:04  time: 0.2871  data_time: 0.0010  memory: 4288  loss: 1.9832
+2023/06/07 20:12:31 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:12:31 - mmengine - INFO - Saving checkpoint at 128 epochs
+2023/06/07 20:13:01 - mmengine - INFO - Epoch(train) [129][100/119]  lr: 1.0000e-04  eta: 0:40:30  time: 0.2870  data_time: 0.0009  memory: 4288  loss: 1.9769
+2023/06/07 20:13:06 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:13:06 - mmengine - INFO - Saving checkpoint at 129 epochs
+2023/06/07 20:13:36 - mmengine - INFO - Epoch(train) [130][100/119]  lr: 1.0000e-04  eta: 0:39:55  time: 0.2866  data_time: 0.0010  memory: 4288  loss: 2.0205
+2023/06/07 20:13:41 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:13:41 - mmengine - INFO - Saving checkpoint at 130 epochs
+2023/06/07 20:13:44 - mmengine - INFO - Epoch(val) [130][21/21]    accuracy/top1: 58.5253  accuracy/top5: 80.3379  data_time: 0.0046  time: 0.0858
+2023/06/07 20:14:13 - mmengine - INFO - Epoch(train) [131][100/119]  lr: 1.0000e-04  eta: 0:39:21  time: 0.2874  data_time: 0.0008  memory: 4288  loss: 1.8952
+2023/06/07 20:14:18 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:14:18 - mmengine - INFO - Saving checkpoint at 131 epochs
+2023/06/07 20:14:48 - mmengine - INFO - Epoch(train) [132][100/119]  lr: 1.0000e-04  eta: 0:38:47  time: 0.2864  data_time: 0.0010  memory: 4288  loss: 1.9165
+2023/06/07 20:14:53 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:14:53 - mmengine - INFO - Saving checkpoint at 132 epochs
+2023/06/07 20:15:23 - mmengine - INFO - Epoch(train) [133][100/119]  lr: 1.0000e-04  eta: 0:38:13  time: 0.2872  data_time: 0.0010  memory: 4288  loss: 2.1289
+2023/06/07 20:15:29 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:15:29 - mmengine - INFO - Saving checkpoint at 133 epochs
+2023/06/07 20:15:59 - mmengine - INFO - Epoch(train) [134][100/119]  lr: 1.0000e-04  eta: 0:37:38  time: 0.2873  data_time: 0.0008  memory: 4288  loss: 1.8192
+2023/06/07 20:16:04 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:16:04 - mmengine - INFO - Saving checkpoint at 134 epochs
+2023/06/07 20:16:21 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:16:34 - mmengine - INFO - Epoch(train) [135][100/119]  lr: 1.0000e-04  eta: 0:37:04  time: 0.2868  data_time: 0.0008  memory: 4288  loss: 1.7525
+2023/06/07 20:16:39 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:16:39 - mmengine - INFO - Saving checkpoint at 135 epochs
+2023/06/07 20:17:09 - mmengine - INFO - Epoch(train) [136][100/119]  lr: 1.0000e-04  eta: 0:36:30  time: 0.2865  data_time: 0.0010  memory: 4288  loss: 1.8946
+2023/06/07 20:17:14 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:17:14 - mmengine - INFO - Saving checkpoint at 136 epochs
+2023/06/07 20:17:44 - mmengine - INFO - Epoch(train) [137][100/119]  lr: 1.0000e-04  eta: 0:35:56  time: 0.2865  data_time: 0.0008  memory: 4288  loss: 2.0816
+2023/06/07 20:17:50 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:17:50 - mmengine - INFO - Saving checkpoint at 137 epochs
+2023/06/07 20:18:20 - mmengine - INFO - Epoch(train) [138][100/119]  lr: 1.0000e-04  eta: 0:35:22  time: 0.2863  data_time: 0.0007  memory: 4288  loss: 1.9481
+2023/06/07 20:18:25 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:18:25 - mmengine - INFO - Saving checkpoint at 138 epochs
+2023/06/07 20:18:55 - mmengine - INFO - Epoch(train) [139][100/119]  lr: 1.0000e-04  eta: 0:34:47  time: 0.2864  data_time: 0.0009  memory: 4288  loss: 1.7664
+2023/06/07 20:19:00 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:19:00 - mmengine - INFO - Saving checkpoint at 139 epochs
+2023/06/07 20:19:30 - mmengine - INFO - Epoch(train) [140][100/119]  lr: 1.0000e-04  eta: 0:34:13  time: 0.2874  data_time: 0.0010  memory: 4288  loss: 1.7977
+2023/06/07 20:19:35 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:19:35 - mmengine - INFO - Saving checkpoint at 140 epochs
+2023/06/07 20:19:39 - mmengine - INFO - Epoch(val) [140][21/21]    accuracy/top1: 58.9862  accuracy/top5: 79.8771  data_time: 0.0045  time: 0.0857
+2023/06/07 20:20:07 - mmengine - INFO - Epoch(train) [141][100/119]  lr: 1.0000e-04  eta: 0:33:39  time: 0.2872  data_time: 0.0009  memory: 4288  loss: 1.5885
+2023/06/07 20:20:13 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:20:13 - mmengine - INFO - Saving checkpoint at 141 epochs
+2023/06/07 20:20:43 - mmengine - INFO - Epoch(train) [142][100/119]  lr: 1.0000e-04  eta: 0:33:05  time: 0.2870  data_time: 0.0009  memory: 4288  loss: 1.8883
+2023/06/07 20:20:48 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:20:48 - mmengine - INFO - Saving checkpoint at 142 epochs
+2023/06/07 20:21:18 - mmengine - INFO - Epoch(train) [143][100/119]  lr: 1.0000e-04  eta: 0:32:31  time: 0.2866  data_time: 0.0010  memory: 4288  loss: 2.0046
+2023/06/07 20:21:18 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:21:23 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:21:23 - mmengine - INFO - Saving checkpoint at 143 epochs
+2023/06/07 20:21:53 - mmengine - INFO - Epoch(train) [144][100/119]  lr: 1.0000e-04  eta: 0:31:56  time: 0.2867  data_time: 0.0009  memory: 4288  loss: 1.8795
+2023/06/07 20:21:58 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:21:58 - mmengine - INFO - Saving checkpoint at 144 epochs
+2023/06/07 20:22:28 - mmengine - INFO - Epoch(train) [145][100/119]  lr: 1.0000e-04  eta: 0:31:22  time: 0.2871  data_time: 0.0009  memory: 4288  loss: 1.7432
+2023/06/07 20:22:33 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:22:33 - mmengine - INFO - Saving checkpoint at 145 epochs
+2023/06/07 20:23:04 - mmengine - INFO - Epoch(train) [146][100/119]  lr: 1.0000e-04  eta: 0:30:48  time: 0.2866  data_time: 0.0009  memory: 4288  loss: 1.7268
+2023/06/07 20:23:09 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:23:09 - mmengine - INFO - Saving checkpoint at 146 epochs
+2023/06/07 20:23:39 - mmengine - INFO - Epoch(train) [147][100/119]  lr: 1.0000e-04  eta: 0:30:14  time: 0.2875  data_time: 0.0011  memory: 4288  loss: 1.7996
+2023/06/07 20:23:44 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:23:44 - mmengine - INFO - Saving checkpoint at 147 epochs
+2023/06/07 20:24:14 - mmengine - INFO - Epoch(train) [148][100/119]  lr: 1.0000e-04  eta: 0:29:40  time: 0.2865  data_time: 0.0007  memory: 4288  loss: 1.7483
+2023/06/07 20:24:19 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:24:19 - mmengine - INFO - Saving checkpoint at 148 epochs
+2023/06/07 20:24:49 - mmengine - INFO - Epoch(train) [149][100/119]  lr: 1.0000e-04  eta: 0:29:05  time: 0.2867  data_time: 0.0009  memory: 4288  loss: 1.8891
+2023/06/07 20:24:55 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:24:55 - mmengine - INFO - Saving checkpoint at 149 epochs
+2023/06/07 20:25:25 - mmengine - INFO - Epoch(train) [150][100/119]  lr: 1.0000e-04  eta: 0:28:31  time: 0.2868  data_time: 0.0006  memory: 4288  loss: 1.8235
+2023/06/07 20:25:30 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:25:30 - mmengine - INFO - Saving checkpoint at 150 epochs
+2023/06/07 20:25:33 - mmengine - INFO - Epoch(val) [150][21/21]    accuracy/top1: 60.0614  accuracy/top5: 80.3379  data_time: 0.0047  time: 0.0857
+2023/06/07 20:26:02 - mmengine - INFO - Epoch(train) [151][100/119]  lr: 1.0000e-04  eta: 0:27:57  time: 0.2878  data_time: 0.0009  memory: 4288  loss: 2.1473
+2023/06/07 20:26:07 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:26:07 - mmengine - INFO - Saving checkpoint at 151 epochs
+2023/06/07 20:26:17 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:26:37 - mmengine - INFO - Epoch(train) [152][100/119]  lr: 1.0000e-04  eta: 0:27:23  time: 0.2868  data_time: 0.0008  memory: 4288  loss: 2.2898
+2023/06/07 20:26:42 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:26:42 - mmengine - INFO - Saving checkpoint at 152 epochs
+2023/06/07 20:27:12 - mmengine - INFO - Epoch(train) [153][100/119]  lr: 1.0000e-04  eta: 0:26:49  time: 0.2865  data_time: 0.0009  memory: 4288  loss: 1.7984
+2023/06/07 20:27:17 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:27:17 - mmengine - INFO - Saving checkpoint at 153 epochs
+2023/06/07 20:27:48 - mmengine - INFO - Epoch(train) [154][100/119]  lr: 1.0000e-04  eta: 0:26:15  time: 0.2864  data_time: 0.0008  memory: 4288  loss: 1.8227
+2023/06/07 20:27:53 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:27:53 - mmengine - INFO - Saving checkpoint at 154 epochs
+2023/06/07 20:28:23 - mmengine - INFO - Epoch(train) [155][100/119]  lr: 1.0000e-04  eta: 0:25:40  time: 0.2868  data_time: 0.0009  memory: 4288  loss: 1.7086
+2023/06/07 20:28:28 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:28:28 - mmengine - INFO - Saving checkpoint at 155 epochs
+2023/06/07 20:28:58 - mmengine - INFO - Epoch(train) [156][100/119]  lr: 1.0000e-04  eta: 0:25:06  time: 0.2869  data_time: 0.0010  memory: 4288  loss: 1.6572
+2023/06/07 20:29:03 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:29:03 - mmengine - INFO - Saving checkpoint at 156 epochs
+2023/06/07 20:29:33 - mmengine - INFO - Epoch(train) [157][100/119]  lr: 1.0000e-04  eta: 0:24:32  time: 0.2871  data_time: 0.0009  memory: 4288  loss: 1.8313
+2023/06/07 20:29:38 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:29:38 - mmengine - INFO - Saving checkpoint at 157 epochs
+2023/06/07 20:30:09 - mmengine - INFO - Epoch(train) [158][100/119]  lr: 1.0000e-04  eta: 0:23:58  time: 0.2867  data_time: 0.0010  memory: 4288  loss: 1.7997
+2023/06/07 20:30:14 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:30:14 - mmengine - INFO - Saving checkpoint at 158 epochs
+2023/06/07 20:30:44 - mmengine - INFO - Epoch(train) [159][100/119]  lr: 1.0000e-04  eta: 0:23:24  time: 0.2873  data_time: 0.0010  memory: 4288  loss: 1.9486
+2023/06/07 20:30:49 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:30:49 - mmengine - INFO - Saving checkpoint at 159 epochs
+2023/06/07 20:31:13 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:31:19 - mmengine - INFO - Epoch(train) [160][100/119]  lr: 1.0000e-04  eta: 0:22:50  time: 0.2869  data_time: 0.0010  memory: 4288  loss: 1.9554
+2023/06/07 20:31:24 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:31:24 - mmengine - INFO - Saving checkpoint at 160 epochs
+2023/06/07 20:31:28 - mmengine - INFO - Epoch(val) [160][21/21]    accuracy/top1: 57.6037  accuracy/top5: 80.7988  data_time: 0.0047  time: 0.0864
+2023/06/07 20:31:56 - mmengine - INFO - Epoch(train) [161][100/119]  lr: 1.0000e-04  eta: 0:22:16  time: 0.2870  data_time: 0.0010  memory: 4288  loss: 1.9517
+2023/06/07 20:32:02 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:32:02 - mmengine - INFO - Saving checkpoint at 161 epochs
+2023/06/07 20:32:32 - mmengine - INFO - Epoch(train) [162][100/119]  lr: 1.0000e-04  eta: 0:21:41  time: 0.2876  data_time: 0.0009  memory: 4288  loss: 2.0813
+2023/06/07 20:32:37 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:32:37 - mmengine - INFO - Saving checkpoint at 162 epochs
+2023/06/07 20:33:07 - mmengine - INFO - Epoch(train) [163][100/119]  lr: 1.0000e-04  eta: 0:21:07  time: 0.2871  data_time: 0.0009  memory: 4288  loss: 1.6339
+2023/06/07 20:33:12 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:33:12 - mmengine - INFO - Saving checkpoint at 163 epochs
+2023/06/07 20:33:42 - mmengine - INFO - Epoch(train) [164][100/119]  lr: 1.0000e-04  eta: 0:20:33  time: 0.2870  data_time: 0.0008  memory: 4288  loss: 1.7559
+2023/06/07 20:33:48 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:33:48 - mmengine - INFO - Saving checkpoint at 164 epochs
+2023/06/07 20:34:18 - mmengine - INFO - Epoch(train) [165][100/119]  lr: 1.0000e-04  eta: 0:19:59  time: 0.2866  data_time: 0.0006  memory: 4288  loss: 1.7653
+2023/06/07 20:34:23 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:34:23 - mmengine - INFO - Saving checkpoint at 165 epochs
+2023/06/07 20:34:53 - mmengine - INFO - Epoch(train) [166][100/119]  lr: 1.0000e-04  eta: 0:19:25  time: 0.2869  data_time: 0.0007  memory: 4288  loss: 1.9916
+2023/06/07 20:34:58 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:34:58 - mmengine - INFO - Saving checkpoint at 166 epochs
+2023/06/07 20:35:28 - mmengine - INFO - Epoch(train) [167][100/119]  lr: 1.0000e-04  eta: 0:18:51  time: 0.2878  data_time: 0.0009  memory: 4288  loss: 1.9955
+2023/06/07 20:35:33 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:35:33 - mmengine - INFO - Saving checkpoint at 167 epochs
+2023/06/07 20:36:03 - mmengine - INFO - Epoch(train) [168][100/119]  lr: 1.0000e-04  eta: 0:18:17  time: 0.2868  data_time: 0.0010  memory: 4288  loss: 1.8060
+2023/06/07 20:36:09 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:36:09 - mmengine - INFO - Saving checkpoint at 168 epochs
+2023/06/07 20:36:12 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:36:39 - mmengine - INFO - Epoch(train) [169][100/119]  lr: 1.0000e-04  eta: 0:17:42  time: 0.2871  data_time: 0.0009  memory: 4288  loss: 2.0318
+2023/06/07 20:36:44 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:36:44 - mmengine - INFO - Saving checkpoint at 169 epochs
+2023/06/07 20:37:14 - mmengine - INFO - Epoch(train) [170][100/119]  lr: 1.0000e-04  eta: 0:17:08  time: 0.2868  data_time: 0.0008  memory: 4288  loss: 1.8164
+2023/06/07 20:37:19 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:37:19 - mmengine - INFO - Saving checkpoint at 170 epochs
+2023/06/07 20:37:22 - mmengine - INFO - Epoch(val) [170][21/21]    accuracy/top1: 57.1429  accuracy/top5: 81.1060  data_time: 0.0046  time: 0.0870
+2023/06/07 20:37:51 - mmengine - INFO - Epoch(train) [171][100/119]  lr: 1.0000e-04  eta: 0:16:34  time: 0.2867  data_time: 0.0009  memory: 4288  loss: 2.0409
+2023/06/07 20:37:57 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:37:57 - mmengine - INFO - Saving checkpoint at 171 epochs
+2023/06/07 20:38:27 - mmengine - INFO - Epoch(train) [172][100/119]  lr: 1.0000e-04  eta: 0:16:00  time: 0.2871  data_time: 0.0009  memory: 4288  loss: 1.9099
+2023/06/07 20:38:32 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:38:32 - mmengine - INFO - Saving checkpoint at 172 epochs
+2023/06/07 20:39:02 - mmengine - INFO - Epoch(train) [173][100/119]  lr: 1.0000e-04  eta: 0:15:26  time: 0.2868  data_time: 0.0009  memory: 4288  loss: 2.0928
+2023/06/07 20:39:07 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:39:07 - mmengine - INFO - Saving checkpoint at 173 epochs
+2023/06/07 20:39:38 - mmengine - INFO - Epoch(train) [174][100/119]  lr: 1.0000e-04  eta: 0:14:52  time: 0.2879  data_time: 0.0008  memory: 4288  loss: 1.8845
+2023/06/07 20:39:43 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:39:43 - mmengine - INFO - Saving checkpoint at 174 epochs
+2023/06/07 20:40:13 - mmengine - INFO - Epoch(train) [175][100/119]  lr: 1.0000e-04  eta: 0:14:18  time: 0.2872  data_time: 0.0010  memory: 4288  loss: 1.9212
+2023/06/07 20:40:18 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:40:18 - mmengine - INFO - Saving checkpoint at 175 epochs
+2023/06/07 20:40:48 - mmengine - INFO - Epoch(train) [176][100/119]  lr: 1.0000e-04  eta: 0:13:44  time: 0.2870  data_time: 0.0009  memory: 4288  loss: 1.7973
+2023/06/07 20:40:54 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:40:54 - mmengine - INFO - Saving checkpoint at 176 epochs
+2023/06/07 20:41:11 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:41:24 - mmengine - INFO - Epoch(train) [177][100/119]  lr: 1.0000e-04  eta: 0:13:10  time: 0.2873  data_time: 0.0009  memory: 4288  loss: 1.8337
+2023/06/07 20:41:29 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:41:29 - mmengine - INFO - Saving checkpoint at 177 epochs
+2023/06/07 20:41:59 - mmengine - INFO - Epoch(train) [178][100/119]  lr: 1.0000e-04  eta: 0:12:35  time: 0.2875  data_time: 0.0010  memory: 4288  loss: 1.5920
+2023/06/07 20:42:04 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:42:04 - mmengine - INFO - Saving checkpoint at 178 epochs
+2023/06/07 20:42:35 - mmengine - INFO - Epoch(train) [179][100/119]  lr: 1.0000e-04  eta: 0:12:01  time: 0.2870  data_time: 0.0008  memory: 4288  loss: 2.2499
+2023/06/07 20:42:40 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:42:40 - mmengine - INFO - Saving checkpoint at 179 epochs
+2023/06/07 20:43:10 - mmengine - INFO - Epoch(train) [180][100/119]  lr: 1.0000e-04  eta: 0:11:27  time: 0.2872  data_time: 0.0010  memory: 4288  loss: 1.6572
+2023/06/07 20:43:15 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:43:15 - mmengine - INFO - Saving checkpoint at 180 epochs
+2023/06/07 20:43:18 - mmengine - INFO - Epoch(val) [180][21/21]    accuracy/top1: 60.2151  accuracy/top5: 80.9524  data_time: 0.0045  time: 0.0855
+2023/06/07 20:43:47 - mmengine - INFO - Epoch(train) [181][100/119]  lr: 1.0000e-04  eta: 0:10:53  time: 0.2872  data_time: 0.0010  memory: 4288  loss: 1.8475
+2023/06/07 20:43:53 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:43:53 - mmengine - INFO - Saving checkpoint at 181 epochs
+2023/06/07 20:44:23 - mmengine - INFO - Epoch(train) [182][100/119]  lr: 1.0000e-04  eta: 0:10:19  time: 0.2864  data_time: 0.0007  memory: 4288  loss: 1.7164
+2023/06/07 20:44:28 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:44:28 - mmengine - INFO - Saving checkpoint at 182 epochs
+2023/06/07 20:44:58 - mmengine - INFO - Epoch(train) [183][100/119]  lr: 1.0000e-04  eta: 0:09:45  time: 0.2869  data_time: 0.0009  memory: 4288  loss: 1.9290
+2023/06/07 20:45:03 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:45:03 - mmengine - INFO - Saving checkpoint at 183 epochs
+2023/06/07 20:45:33 - mmengine - INFO - Epoch(train) [184][100/119]  lr: 1.0000e-04  eta: 0:09:11  time: 0.2869  data_time: 0.0010  memory: 4288  loss: 2.0629
+2023/06/07 20:45:39 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:45:39 - mmengine - INFO - Saving checkpoint at 184 epochs
+2023/06/07 20:46:09 - mmengine - INFO - Epoch(train) [185][100/119]  lr: 1.0000e-04  eta: 0:08:37  time: 0.2872  data_time: 0.0010  memory: 4288  loss: 1.6892
+2023/06/07 20:46:10 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:46:14 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:46:14 - mmengine - INFO - Saving checkpoint at 185 epochs
+2023/06/07 20:46:45 - mmengine - INFO - Epoch(train) [186][100/119]  lr: 1.0000e-04  eta: 0:08:03  time: 0.2894  data_time: 0.0010  memory: 4288  loss: 1.9662
+2023/06/07 20:46:50 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:46:50 - mmengine - INFO - Saving checkpoint at 186 epochs
+2023/06/07 20:47:20 - mmengine - INFO - Epoch(train) [187][100/119]  lr: 1.0000e-04  eta: 0:07:28  time: 0.2869  data_time: 0.0010  memory: 4288  loss: 1.5331
+2023/06/07 20:47:25 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:47:25 - mmengine - INFO - Saving checkpoint at 187 epochs
+2023/06/07 20:47:55 - mmengine - INFO - Epoch(train) [188][100/119]  lr: 1.0000e-04  eta: 0:06:54  time: 0.2870  data_time: 0.0010  memory: 4288  loss: 1.7146
+2023/06/07 20:48:00 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:48:00 - mmengine - INFO - Saving checkpoint at 188 epochs
+2023/06/07 20:48:31 - mmengine - INFO - Epoch(train) [189][100/119]  lr: 1.0000e-04  eta: 0:06:20  time: 0.2873  data_time: 0.0009  memory: 4288  loss: 1.7656
+2023/06/07 20:48:36 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:48:36 - mmengine - INFO - Saving checkpoint at 189 epochs
+2023/06/07 20:49:06 - mmengine - INFO - Epoch(train) [190][100/119]  lr: 1.0000e-04  eta: 0:05:46  time: 0.2865  data_time: 0.0008  memory: 4288  loss: 1.6755
+2023/06/07 20:49:11 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:49:11 - mmengine - INFO - Saving checkpoint at 190 epochs
+2023/06/07 20:49:14 - mmengine - INFO - Epoch(val) [190][21/21]    accuracy/top1: 58.0645  accuracy/top5: 80.4915  data_time: 0.0045  time: 0.0855
+2023/06/07 20:49:43 - mmengine - INFO - Epoch(train) [191][100/119]  lr: 1.0000e-04  eta: 0:05:12  time: 0.2868  data_time: 0.0009  memory: 4288  loss: 1.8139
+2023/06/07 20:49:48 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:49:48 - mmengine - INFO - Saving checkpoint at 191 epochs
+2023/06/07 20:50:18 - mmengine - INFO - Epoch(train) [192][100/119]  lr: 1.0000e-04  eta: 0:04:38  time: 0.2863  data_time: 0.0009  memory: 4288  loss: 1.7383
+2023/06/07 20:50:24 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:50:24 - mmengine - INFO - Saving checkpoint at 192 epochs
+2023/06/07 20:50:54 - mmengine - INFO - Epoch(train) [193][100/119]  lr: 1.0000e-04  eta: 0:04:04  time: 0.2864  data_time: 0.0008  memory: 4288  loss: 2.0115
+2023/06/07 20:50:59 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:50:59 - mmengine - INFO - Saving checkpoint at 193 epochs
+2023/06/07 20:51:10 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:51:29 - mmengine - INFO - Epoch(train) [194][100/119]  lr: 1.0000e-04  eta: 0:03:30  time: 0.2864  data_time: 0.0009  memory: 4288  loss: 1.7572
+2023/06/07 20:51:34 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:51:34 - mmengine - INFO - Saving checkpoint at 194 epochs
+2023/06/07 20:52:04 - mmengine - INFO - Epoch(train) [195][100/119]  lr: 1.0000e-04  eta: 0:02:56  time: 0.2869  data_time: 0.0009  memory: 4288  loss: 1.7879
+2023/06/07 20:52:10 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:52:10 - mmengine - INFO - Saving checkpoint at 195 epochs
+2023/06/07 20:52:40 - mmengine - INFO - Epoch(train) [196][100/119]  lr: 1.0000e-04  eta: 0:02:21  time: 0.2865  data_time: 0.0006  memory: 4288  loss: 1.6719
+2023/06/07 20:52:45 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:52:45 - mmengine - INFO - Saving checkpoint at 196 epochs
+2023/06/07 20:53:15 - mmengine - INFO - Epoch(train) [197][100/119]  lr: 1.0000e-04  eta: 0:01:47  time: 0.2865  data_time: 0.0009  memory: 4288  loss: 2.1375
+2023/06/07 20:53:20 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:53:20 - mmengine - INFO - Saving checkpoint at 197 epochs
+2023/06/07 20:53:50 - mmengine - INFO - Epoch(train) [198][100/119]  lr: 1.0000e-04  eta: 0:01:13  time: 0.2866  data_time: 0.0009  memory: 4288  loss: 2.0614
+2023/06/07 20:53:55 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:53:55 - mmengine - INFO - Saving checkpoint at 198 epochs
+2023/06/07 20:54:26 - mmengine - INFO - Epoch(train) [199][100/119]  lr: 1.0000e-04  eta: 0:00:39  time: 0.2894  data_time: 0.0011  memory: 4288  loss: 1.8433
+2023/06/07 20:54:31 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:54:31 - mmengine - INFO - Saving checkpoint at 199 epochs
+2023/06/07 20:55:02 - mmengine - INFO - Epoch(train) [200][100/119]  lr: 1.0000e-04  eta: 0:00:05  time: 0.2876  data_time: 0.0008  memory: 4288  loss: 2.0650
+2023/06/07 20:55:07 - mmengine - INFO - Exp name: resnet50_finetune_20230607_185550
+2023/06/07 20:55:07 - mmengine - INFO - Saving checkpoint at 200 epochs
+2023/06/07 20:55:10 - mmengine - INFO - Epoch(val) [200][21/21]    accuracy/top1: 58.2181  accuracy/top5: 80.3379  data_time: 0.0044  time: 0.0864
