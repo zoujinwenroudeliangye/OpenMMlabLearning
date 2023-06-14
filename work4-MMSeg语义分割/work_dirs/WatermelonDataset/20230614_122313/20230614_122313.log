@@ -1,0 +1,475 @@
+2023/06/14 12:23:20 - mmengine - INFO - 
+------------------------------------------------------------
+System environment:
+    sys.platform: win32
+    Python: 3.9.16 (main, Mar  8 2023, 10:39:24) [MSC v.1916 64 bit (AMD64)]
+    CUDA available: True
+    numpy_random_seed: 0
+    GPU 0: NVIDIA GeForce RTX 3060
+    CUDA_HOME: None
+    MSVC: n/a, reason: fileno
+    PyTorch: 2.0.1+cu117
+    PyTorch compiling details: PyTorch built with:
+  - C++ Version: 199711
+  - MSVC 193431937
+  - Intel(R) Math Kernel Library Version 2020.0.2 Product Build 20200624 for Intel(R) 64 architecture applications
+  - Intel(R) MKL-DNN v2.7.3 (Git Hash 6dbeffbae1f23cbbeae17adb7b5b13f1f37c080e)
+  - OpenMP 2019
+  - LAPACK is enabled (usually provided by MKL)
+  - CPU capability usage: AVX2
+  - CUDA Runtime 11.7
+  - NVCC architecture flags: -gencode;arch=compute_37,code=sm_37;-gencode;arch=compute_50,code=sm_50;-gencode;arch=compute_60,code=sm_60;-gencode;arch=compute_61,code=sm_61;-gencode;arch=compute_70,code=sm_70;-gencode;arch=compute_75,code=sm_75;-gencode;arch=compute_80,code=sm_80;-gencode;arch=compute_86,code=sm_86;-gencode;arch=compute_37,code=compute_37
+  - CuDNN 8.5
+  - Magma 2.5.4
+  - Build settings: BLAS_INFO=mkl, BUILD_TYPE=Release, CUDA_VERSION=11.7, CUDNN_VERSION=8.5.0, CXX_COMPILER=C:/actions-runner/_work/pytorch/pytorch/builder/windows/tmp_bin/sccache-cl.exe, CXX_FLAGS=/DWIN32 /D_WINDOWS /GR /EHsc /w /bigobj /FS -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOCUPTI -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE, LAPACK_INFO=mkl, PERF_WITH_AVX=1, PERF_WITH_AVX2=1, PERF_WITH_AVX512=1, TORCH_DISABLE_GPU_ASSERTS=OFF, TORCH_VERSION=2.0.1, USE_CUDA=ON, USE_CUDNN=ON, USE_EXCEPTION_PTR=1, USE_GFLAGS=OFF, USE_GLOG=OFF, USE_MKL=ON, USE_MKLDNN=ON, USE_MPI=OFF, USE_NCCL=OFF, USE_NNPACK=OFF, USE_OPENMP=ON, USE_ROCM=OFF, 
+
+    TorchVision: 0.15.2+cu117
+    OpenCV: 4.7.0
+    MMEngine: 0.7.3
+
+Runtime environment:
+    cudnn_benchmark: True
+    mp_cfg: {'mp_start_method': 'fork', 'opencv_num_threads': 0}
+    dist_cfg: {'backend': 'nccl'}
+    seed: 0
+    Distributed launcher: none
+    Distributed training: False
+    GPU number: 1
+------------------------------------------------------------
+
+2023/06/14 12:23:20 - mmengine - INFO - Config:
+norm_cfg = dict(type='BN', requires_grad=True)
+data_preprocessor = dict(
+    type='SegDataPreProcessor',
+    mean=[123.675, 116.28, 103.53],
+    std=[58.395, 57.12, 57.375],
+    bgr_to_rgb=True,
+    pad_val=0,
+    seg_pad_val=255,
+    size=(64, 64))
+model = dict(
+    type='EncoderDecoder',
+    data_preprocessor=dict(
+        type='SegDataPreProcessor',
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
+        bgr_to_rgb=True,
+        pad_val=0,
+        seg_pad_val=255,
+        size=(256, 256)),
+    pretrained='open-mmlab://resnet50_v1c',
+    backbone=dict(
+        type='ResNetV1c',
+        depth=50,
+        num_stages=4,
+        out_indices=(0, 1, 2, 3),
+        dilations=(1, 1, 2, 4),
+        strides=(1, 2, 1, 1),
+        norm_cfg=dict(type='BN', requires_grad=True),
+        norm_eval=False,
+        style='pytorch',
+        contract_dilation=True),
+    decode_head=dict(
+        type='PSPHead',
+        in_channels=2048,
+        in_index=3,
+        channels=512,
+        pool_scales=(1, 2, 3, 6),
+        dropout_ratio=0.1,
+        num_classes=6,
+        norm_cfg=dict(type='BN', requires_grad=True),
+        align_corners=False,
+        loss_decode=dict(
+            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)),
+    auxiliary_head=dict(
+        type='FCNHead',
+        in_channels=1024,
+        in_index=2,
+        channels=256,
+        num_convs=1,
+        concat_input=False,
+        dropout_ratio=0.1,
+        num_classes=6,
+        norm_cfg=dict(type='BN', requires_grad=True),
+        align_corners=False,
+        loss_decode=dict(
+            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
+    train_cfg=dict(),
+    test_cfg=dict(mode='whole'))
+dataset_type = 'WatermelonDataset'
+data_root = 'data/Watermelon87_Semantic_Seg_Mask/'
+crop_size = (256, 256)
+train_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadAnnotations'),
+    dict(
+        type='RandomResize',
+        scale=(2048, 1024),
+        ratio_range=(0.5, 2.0),
+        keep_ratio=True),
+    dict(type='RandomCrop', crop_size=(64, 64), cat_max_ratio=0.75),
+    dict(type='RandomFlip', prob=0.5),
+    dict(type='PhotoMetricDistortion'),
+    dict(type='PackSegInputs')
+]
+test_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='Resize', scale=(2048, 1024), keep_ratio=True),
+    dict(type='LoadAnnotations'),
+    dict(type='PackSegInputs')
+]
+img_ratios = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75]
+tta_pipeline = [
+    dict(type='LoadImageFromFile', file_client_args=dict(backend='disk')),
+    dict(
+        type='TestTimeAug',
+        transforms=[[{
+            'type': 'Resize',
+            'scale_factor': 0.5,
+            'keep_ratio': True
+        }, {
+            'type': 'Resize',
+            'scale_factor': 0.75,
+            'keep_ratio': True
+        }, {
+            'type': 'Resize',
+            'scale_factor': 1.0,
+            'keep_ratio': True
+        }, {
+            'type': 'Resize',
+            'scale_factor': 1.25,
+            'keep_ratio': True
+        }, {
+            'type': 'Resize',
+            'scale_factor': 1.5,
+            'keep_ratio': True
+        }, {
+            'type': 'Resize',
+            'scale_factor': 1.75,
+            'keep_ratio': True
+        }],
+                    [{
+                        'type': 'RandomFlip',
+                        'prob': 0.0,
+                        'direction': 'horizontal'
+                    }, {
+                        'type': 'RandomFlip',
+                        'prob': 1.0,
+                        'direction': 'horizontal'
+                    }], [{
+                        'type': 'LoadAnnotations'
+                    }], [{
+                        'type': 'PackSegInputs'
+                    }]])
+]
+train_dataloader = dict(
+    batch_size=8,
+    num_workers=2,
+    persistent_workers=True,
+    sampler=dict(type='InfiniteSampler', shuffle=True),
+    dataset=dict(
+        type='WatermelonDataset',
+        data_root='data/Watermelon87_Semantic_Seg_Mask/',
+        data_prefix=dict(
+            img_path='img_dir/train', seg_map_path='ann_dir/train'),
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='LoadAnnotations'),
+            dict(
+                type='RandomResize',
+                scale=(2048, 1024),
+                ratio_range=(0.5, 2.0),
+                keep_ratio=True),
+            dict(type='RandomCrop', crop_size=(64, 64), cat_max_ratio=0.75),
+            dict(type='RandomFlip', prob=0.5),
+            dict(type='PhotoMetricDistortion'),
+            dict(type='PackSegInputs')
+        ]))
+val_dataloader = dict(
+    batch_size=1,
+    num_workers=4,
+    persistent_workers=True,
+    sampler=dict(type='DefaultSampler', shuffle=False),
+    dataset=dict(
+        type='WatermelonDataset',
+        data_root='data/Watermelon87_Semantic_Seg_Mask/',
+        data_prefix=dict(img_path='img_dir/val', seg_map_path='ann_dir/val'),
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='Resize', scale=(2048, 1024), keep_ratio=True),
+            dict(type='LoadAnnotations'),
+            dict(type='PackSegInputs')
+        ]))
+test_dataloader = dict(
+    batch_size=1,
+    num_workers=4,
+    persistent_workers=True,
+    sampler=dict(type='DefaultSampler', shuffle=False),
+    dataset=dict(
+        type='WatermelonDataset',
+        data_root='data/Watermelon87_Semantic_Seg_Mask/',
+        data_prefix=dict(img_path='img_dir/val', seg_map_path='ann_dir/val'),
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='Resize', scale=(2048, 1024), keep_ratio=True),
+            dict(type='LoadAnnotations'),
+            dict(type='PackSegInputs')
+        ]))
+val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU'])
+test_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU'])
+default_scope = 'mmseg'
+env_cfg = dict(
+    cudnn_benchmark=True,
+    mp_cfg=dict(mp_start_method='fork', opencv_num_threads=0),
+    dist_cfg=dict(backend='nccl'))
+vis_backends = [dict(type='LocalVisBackend')]
+visualizer = dict(
+    type='SegLocalVisualizer',
+    vis_backends=[dict(type='LocalVisBackend')],
+    name='visualizer')
+log_processor = dict(by_epoch=False)
+log_level = 'INFO'
+load_from = None
+resume = False
+tta_model = dict(type='SegTTAModel')
+optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0005)
+optim_wrapper = dict(
+    type='OptimWrapper',
+    optimizer=dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0005),
+    clip_grad=None)
+param_scheduler = [
+    dict(
+        type='PolyLR',
+        eta_min=0.0001,
+        power=0.9,
+        begin=0,
+        end=40000,
+        by_epoch=False)
+]
+train_cfg = dict(type='IterBasedTrainLoop', max_iters=3000, val_interval=400)
+val_cfg = dict(type='ValLoop')
+test_cfg = dict(type='TestLoop')
+default_hooks = dict(
+    timer=dict(type='IterTimerHook'),
+    logger=dict(type='LoggerHook', interval=100, log_metric_by_epoch=False),
+    param_scheduler=dict(type='ParamSchedulerHook'),
+    checkpoint=dict(type='CheckpointHook', by_epoch=False, interval=1500),
+    sampler_seed=dict(type='DistSamplerSeedHook'),
+    visualization=dict(type='SegVisualizationHook'))
+work_dir = './work_dirs/WatermelonDataset'
+randomness = dict(seed=0)
+
+2023/06/14 12:23:21 - mmengine - INFO - Distributed training is not used, all SyncBatchNorm (SyncBN) layers in the model will be automatically reverted to BatchNormXd layers if they are used.
+2023/06/14 12:23:21 - mmengine - INFO - Hooks will be executed in the following order:
+before_run:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+before_train:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+before_train_epoch:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) DistSamplerSeedHook                
+ -------------------- 
+before_train_iter:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+after_train_iter:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) SegVisualizationHook               
+(BELOW_NORMAL) LoggerHook                         
+(LOW         ) ParamSchedulerHook                 
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+after_train_epoch:
+(NORMAL      ) IterTimerHook                      
+(LOW         ) ParamSchedulerHook                 
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+before_val_epoch:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+before_val_iter:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+after_val_iter:
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) SegVisualizationHook               
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+after_val_epoch:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(BELOW_NORMAL) LoggerHook                         
+(LOW         ) ParamSchedulerHook                 
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+after_train:
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+before_test_epoch:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+before_test_iter:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+after_test_iter:
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) SegVisualizationHook               
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+after_test_epoch:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+after_run:
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+2023/06/14 12:23:25 - mmengine - WARNING - The prefix is not set in metric class IoUMetric.
+2023/06/14 12:23:26 - mmengine - INFO - load model from: open-mmlab://resnet50_v1c
+2023/06/14 12:23:26 - mmengine - INFO - Loads checkpoint by openmmlab backend from path: open-mmlab://resnet50_v1c
+2023/06/14 12:35:19 - mmengine - WARNING - init_weights of ResLayer has been called more than once.
+2023/06/14 12:35:19 - mmengine - INFO - load model from: open-mmlab://resnet50_v1c
+2023/06/14 12:35:19 - mmengine - INFO - Loads checkpoint by openmmlab backend from path: open-mmlab://resnet50_v1c
+2023/06/14 12:35:19 - mmengine - WARNING - The model and loaded state dict do not match exactly
+
+unexpected key in source state_dict: fc.weight, fc.bias
+
+2023/06/14 12:35:19 - mmengine - WARNING - "FileClient" will be deprecated in future. Please use io functions in https://mmengine.readthedocs.io/en/latest/api/fileio.html#file-io
+2023/06/14 12:35:19 - mmengine - WARNING - "HardDiskBackend" is the alias of "LocalBackend" and the former will be deprecated in future.
+2023/06/14 12:35:19 - mmengine - INFO - Checkpoints will be saved to C:\Users\HKZ\mmsegmentation\work_dirs\WatermelonDataset.
+2023/06/14 12:35:32 - mmengine - INFO - Exp name: pspnet-WatermelonDataset_20230614_20230614_122313
+2023/06/14 12:35:32 - mmengine - INFO - Iter(train) [   3/3000]  lr: 9.9996e-03  eta: 3:31:48  time: 4.2404  data_time: 0.0023  memory: 6131  loss: 0.1516  decode.loss_ce: 0.1057  decode.acc_seg: 56.8451  aux.loss_ce: 0.0458  aux.acc_seg: 20.3217
+2023/06/14 12:36:02 - mmengine - INFO - Iter(train) [ 100/3000]  lr: 9.9779e-03  eta: 0:20:40  time: 0.3110  data_time: 0.0019  memory: 3596  loss: 0.0725  decode.loss_ce: 0.0494  decode.acc_seg: 86.1603  aux.loss_ce: 0.0231  aux.acc_seg: 79.0680
+2023/06/14 12:36:33 - mmengine - INFO - Iter(train) [ 200/3000]  lr: 9.9557e-03  eta: 0:17:13  time: 0.3098  data_time: 0.0019  memory: 3596  loss: 0.0577  decode.loss_ce: 0.0403  decode.acc_seg: 57.5928  aux.loss_ce: 0.0174  aux.acc_seg: 67.9901
+2023/06/14 12:37:04 - mmengine - INFO - Iter(train) [ 300/3000]  lr: 9.9334e-03  eta: 0:15:44  time: 0.3116  data_time: 0.0020  memory: 3596  loss: 0.0550  decode.loss_ce: 0.0384  decode.acc_seg: 76.8036  aux.loss_ce: 0.0166  aux.acc_seg: 71.1487
+2023/06/14 12:37:35 - mmengine - INFO - Iter(train) [ 400/3000]  lr: 9.9111e-03  eta: 0:14:44  time: 0.3116  data_time: 0.0019  memory: 3596  loss: 0.0510  decode.loss_ce: 0.0359  decode.acc_seg: 77.6245  aux.loss_ce: 0.0151  aux.acc_seg: 75.6500
+2023/06/14 12:37:58 - mmengine - INFO - per class results:
+2023/06/14 12:37:58 - mmengine - INFO - 
++------------+-------+-------+
+|   Class    |  IoU  |  Acc  |
++------------+-------+-------+
+|    red     | 64.69 | 98.19 |
+|   green    | 60.38 | 61.79 |
+|   white    | 21.66 | 21.91 |
+| seed-black |  39.2 | 54.53 |
+| seed-white | 60.13 | 66.72 |
+| Unlabeled  |  0.0  |  0.0  |
++------------+-------+-------+
+2023/06/14 12:37:58 - mmengine - INFO - Iter(val) [6/6]    aAcc: 72.5200  mIoU: 41.0100  mAcc: 50.5300  data_time: 0.4676  time: 3.9090
+2023/06/14 12:38:30 - mmengine - INFO - Iter(train) [ 500/3000]  lr: 9.8888e-03  eta: 0:13:57  time: 0.3133  data_time: 0.0019  memory: 8859  loss: 0.0532  decode.loss_ce: 0.0382  decode.acc_seg: 68.9362  aux.loss_ce: 0.0149  aux.acc_seg: 70.4590
+2023/06/14 12:39:01 - mmengine - INFO - Iter(train) [ 600/3000]  lr: 9.8665e-03  eta: 0:13:15  time: 0.3134  data_time: 0.0020  memory: 3596  loss: 0.0517  decode.loss_ce: 0.0363  decode.acc_seg: 82.0312  aux.loss_ce: 0.0154  aux.acc_seg: 74.5331
+2023/06/14 12:39:33 - mmengine - INFO - Iter(train) [ 700/3000]  lr: 9.8442e-03  eta: 0:12:36  time: 0.3133  data_time: 0.0018  memory: 3596  loss: 0.0487  decode.loss_ce: 0.0336  decode.acc_seg: 79.8279  aux.loss_ce: 0.0152  aux.acc_seg: 78.8727
+2023/06/14 12:40:04 - mmengine - INFO - Iter(train) [ 800/3000]  lr: 9.8218e-03  eta: 0:11:59  time: 0.3137  data_time: 0.0021  memory: 3596  loss: 0.0536  decode.loss_ce: 0.0378  decode.acc_seg: 81.2469  aux.loss_ce: 0.0158  aux.acc_seg: 70.6329
+2023/06/14 12:40:05 - mmengine - INFO - per class results:
+2023/06/14 12:40:05 - mmengine - INFO - 
++------------+-------+-------+
+|   Class    |  IoU  |  Acc  |
++------------+-------+-------+
+|    red     | 71.07 | 93.41 |
+|   green    |  76.2 | 85.37 |
+|   white    |  2.74 |  2.74 |
+| seed-black | 35.84 | 67.34 |
+| seed-white | 64.72 | 72.97 |
+| Unlabeled  |  0.0  |  0.0  |
++------------+-------+-------+
+2023/06/14 12:40:05 - mmengine - INFO - Iter(val) [6/6]    aAcc: 75.9700  mIoU: 41.7600  mAcc: 53.6400  data_time: 0.0133  time: 0.2625
+2023/06/14 12:40:37 - mmengine - INFO - Iter(train) [ 900/3000]  lr: 9.7995e-03  eta: 0:11:23  time: 0.3136  data_time: 0.0020  memory: 3596  loss: 0.0374  decode.loss_ce: 0.0258  decode.acc_seg: 70.3186  aux.loss_ce: 0.0117  aux.acc_seg: 74.0784
+2023/06/14 12:41:08 - mmengine - INFO - Exp name: pspnet-WatermelonDataset_20230614_20230614_122313
+2023/06/14 12:41:08 - mmengine - INFO - Iter(train) [1000/3000]  lr: 9.7772e-03  eta: 0:10:48  time: 0.3129  data_time: 0.0020  memory: 3596  loss: 0.0404  decode.loss_ce: 0.0283  decode.acc_seg: 86.3708  aux.loss_ce: 0.0122  aux.acc_seg: 88.3301
+2023/06/14 12:41:40 - mmengine - INFO - Iter(train) [1100/3000]  lr: 9.7549e-03  eta: 0:10:14  time: 0.3138  data_time: 0.0021  memory: 3596  loss: 0.0428  decode.loss_ce: 0.0298  decode.acc_seg: 89.3890  aux.loss_ce: 0.0130  aux.acc_seg: 84.6008
+2023/06/14 12:42:11 - mmengine - INFO - Iter(train) [1200/3000]  lr: 9.7325e-03  eta: 0:09:40  time: 0.3140  data_time: 0.0022  memory: 3596  loss: 0.0394  decode.loss_ce: 0.0274  decode.acc_seg: 90.5914  aux.loss_ce: 0.0121  aux.acc_seg: 90.7684
+2023/06/14 12:42:12 - mmengine - INFO - per class results:
+2023/06/14 12:42:12 - mmengine - INFO - 
++------------+-------+-------+
+|   Class    |  IoU  |  Acc  |
++------------+-------+-------+
+|    red     | 62.96 |  98.6 |
+|   green    | 66.32 | 69.12 |
+|   white    |  8.54 |  8.57 |
+| seed-black | 34.57 | 37.18 |
+| seed-white | 40.31 | 41.61 |
+| Unlabeled  |  0.0  |  0.0  |
++------------+-------+-------+
+2023/06/14 12:42:12 - mmengine - INFO - Iter(val) [6/6]    aAcc: 71.8400  mIoU: 35.4500  mAcc: 42.5100  data_time: 0.0135  time: 0.2620
+2023/06/14 12:42:44 - mmengine - INFO - Iter(train) [1300/3000]  lr: 9.7102e-03  eta: 0:09:07  time: 0.3134  data_time: 0.0019  memory: 3596  loss: 0.0376  decode.loss_ce: 0.0263  decode.acc_seg: 70.2454  aux.loss_ce: 0.0113  aux.acc_seg: 72.2382
+2023/06/14 12:43:15 - mmengine - INFO - Iter(train) [1400/3000]  lr: 9.6878e-03  eta: 0:08:33  time: 0.3142  data_time: 0.0021  memory: 3596  loss: 0.0544  decode.loss_ce: 0.0381  decode.acc_seg: 75.3021  aux.loss_ce: 0.0163  aux.acc_seg: 78.7262
+2023/06/14 12:43:47 - mmengine - INFO - Iter(train) [1500/3000]  lr: 9.6655e-03  eta: 0:08:01  time: 0.3139  data_time: 0.0020  memory: 3596  loss: 0.0334  decode.loss_ce: 0.0231  decode.acc_seg: 85.5804  aux.loss_ce: 0.0103  aux.acc_seg: 85.0281
+2023/06/14 12:43:47 - mmengine - INFO - Saving checkpoint at 1500 iterations
+2023/06/14 12:44:20 - mmengine - INFO - Iter(train) [1600/3000]  lr: 9.6431e-03  eta: 0:07:30  time: 0.3139  data_time: 0.0021  memory: 3596  loss: 0.0351  decode.loss_ce: 0.0243  decode.acc_seg: 79.4006  aux.loss_ce: 0.0108  aux.acc_seg: 74.8169
+2023/06/14 12:44:22 - mmengine - INFO - per class results:
+2023/06/14 12:44:22 - mmengine - INFO - 
++------------+-------+-------+
+|   Class    |  IoU  |  Acc  |
++------------+-------+-------+
+|    red     | 53.18 | 92.69 |
+|   green    | 45.19 |  50.4 |
+|   white    |  2.62 |  2.62 |
+| seed-black | 26.65 | 28.02 |
+| seed-white | 18.92 | 19.95 |
+| Unlabeled  |  0.0  |  0.0  |
++------------+-------+-------+
+2023/06/14 12:44:22 - mmengine - INFO - Iter(val) [6/6]    aAcc: 61.4700  mIoU: 24.4300  mAcc: 32.2800  data_time: 0.0131  time: 0.2609
+2023/06/14 12:44:53 - mmengine - INFO - Iter(train) [1700/3000]  lr: 9.6207e-03  eta: 0:06:57  time: 0.3137  data_time: 0.0019  memory: 3596  loss: 0.0407  decode.loss_ce: 0.0282  decode.acc_seg: 81.4606  aux.loss_ce: 0.0125  aux.acc_seg: 82.3486
+2023/06/14 12:45:24 - mmengine - INFO - Iter(train) [1800/3000]  lr: 9.5983e-03  eta: 0:06:24  time: 0.3143  data_time: 0.0021  memory: 3596  loss: 0.0331  decode.loss_ce: 0.0229  decode.acc_seg: 81.6925  aux.loss_ce: 0.0102  aux.acc_seg: 79.5685
+2023/06/14 12:45:56 - mmengine - INFO - Iter(train) [1900/3000]  lr: 9.5760e-03  eta: 0:05:52  time: 0.3146  data_time: 0.0022  memory: 3596  loss: 0.0383  decode.loss_ce: 0.0271  decode.acc_seg: 86.8805  aux.loss_ce: 0.0112  aux.acc_seg: 87.7533
+2023/06/14 12:46:27 - mmengine - INFO - Exp name: pspnet-WatermelonDataset_20230614_20230614_122313
+2023/06/14 12:46:27 - mmengine - INFO - Iter(train) [2000/3000]  lr: 9.5536e-03  eta: 0:05:20  time: 0.3139  data_time: 0.0022  memory: 3596  loss: 0.0430  decode.loss_ce: 0.0296  decode.acc_seg: 79.1595  aux.loss_ce: 0.0134  aux.acc_seg: 75.9674
+2023/06/14 12:46:29 - mmengine - INFO - per class results:
+2023/06/14 12:46:29 - mmengine - INFO - 
++------------+-------+-------+
+|   Class    |  IoU  |  Acc  |
++------------+-------+-------+
+|    red     | 62.65 | 91.86 |
+|   green    | 71.08 | 80.23 |
+|   white    |  6.14 |  6.14 |
+| seed-black | 47.69 | 53.97 |
+| seed-white | 66.98 | 76.63 |
+| Unlabeled  |  0.0  |  0.0  |
++------------+-------+-------+
+2023/06/14 12:46:29 - mmengine - INFO - Iter(val) [6/6]    aAcc: 73.2900  mIoU: 42.4200  mAcc: 51.4700  data_time: 0.0127  time: 0.2612
+2023/06/14 12:47:00 - mmengine - INFO - Iter(train) [2100/3000]  lr: 9.5312e-03  eta: 0:04:47  time: 0.3140  data_time: 0.0020  memory: 3596  loss: 0.0360  decode.loss_ce: 0.0258  decode.acc_seg: 80.4108  aux.loss_ce: 0.0101  aux.acc_seg: 81.5033
+2023/06/14 12:47:32 - mmengine - INFO - Iter(train) [2200/3000]  lr: 9.5088e-03  eta: 0:04:15  time: 0.3138  data_time: 0.0020  memory: 3596  loss: 0.0450  decode.loss_ce: 0.0320  decode.acc_seg: 84.8267  aux.loss_ce: 0.0130  aux.acc_seg: 84.6680
+2023/06/14 12:48:03 - mmengine - INFO - Iter(train) [2300/3000]  lr: 9.4864e-03  eta: 0:03:43  time: 0.3142  data_time: 0.0020  memory: 3596  loss: 0.0410  decode.loss_ce: 0.0285  decode.acc_seg: 82.8644  aux.loss_ce: 0.0125  aux.acc_seg: 84.6252
+2023/06/14 12:48:34 - mmengine - INFO - Iter(train) [2400/3000]  lr: 9.4640e-03  eta: 0:03:11  time: 0.3142  data_time: 0.0020  memory: 3596  loss: 0.0487  decode.loss_ce: 0.0344  decode.acc_seg: 86.3953  aux.loss_ce: 0.0143  aux.acc_seg: 81.7261
+2023/06/14 12:48:36 - mmengine - INFO - per class results:
+2023/06/14 12:48:36 - mmengine - INFO - 
++------------+-------+-------+
+|   Class    |  IoU  |  Acc  |
++------------+-------+-------+
+|    red     | 65.63 | 88.94 |
+|   green    | 78.25 | 96.35 |
+|   white    |  1.59 |  1.59 |
+| seed-black | 34.03 | 38.49 |
+| seed-white | 49.51 | 51.11 |
+| Unlabeled  |  0.0  |  0.0  |
++------------+-------+-------+
+2023/06/14 12:48:36 - mmengine - INFO - Iter(val) [6/6]    aAcc: 75.2600  mIoU: 38.1700  mAcc: 46.0800  data_time: 0.0125  time: 0.2614
+2023/06/14 12:49:07 - mmengine - INFO - Iter(train) [2500/3000]  lr: 9.4416e-03  eta: 0:02:39  time: 0.3138  data_time: 0.0021  memory: 3596  loss: 0.0390  decode.loss_ce: 0.0273  decode.acc_seg: 88.8550  aux.loss_ce: 0.0118  aux.acc_seg: 86.2946
+2023/06/14 12:49:39 - mmengine - INFO - Iter(train) [2600/3000]  lr: 9.4191e-03  eta: 0:02:07  time: 0.3135  data_time: 0.0021  memory: 3596  loss: 0.0316  decode.loss_ce: 0.0220  decode.acc_seg: 93.1213  aux.loss_ce: 0.0097  aux.acc_seg: 93.5425
+2023/06/14 12:50:10 - mmengine - INFO - Iter(train) [2700/3000]  lr: 9.3967e-03  eta: 0:01:35  time: 0.3139  data_time: 0.0021  memory: 3596  loss: 0.0520  decode.loss_ce: 0.0376  decode.acc_seg: 67.9932  aux.loss_ce: 0.0144  aux.acc_seg: 69.5557
+2023/06/14 12:50:41 - mmengine - INFO - Iter(train) [2800/3000]  lr: 9.3743e-03  eta: 0:01:03  time: 0.3141  data_time: 0.0020  memory: 3596  loss: 0.0426  decode.loss_ce: 0.0293  decode.acc_seg: 87.5763  aux.loss_ce: 0.0133  aux.acc_seg: 84.0454
+2023/06/14 12:50:43 - mmengine - INFO - per class results:
+2023/06/14 12:50:43 - mmengine - INFO - 
++------------+-------+-------+
+|   Class    |  IoU  |  Acc  |
++------------+-------+-------+
+|    red     | 65.53 | 91.89 |
+|   green    | 76.14 | 85.77 |
+|   white    |  8.96 |  8.97 |
+| seed-black | 63.61 | 72.54 |
+| seed-white | 44.46 | 45.77 |
+| Unlabeled  |  0.0  |  0.0  |
++------------+-------+-------+
+2023/06/14 12:50:43 - mmengine - INFO - Iter(val) [6/6]    aAcc: 76.3700  mIoU: 43.1200  mAcc: 50.8200  data_time: 0.0127  time: 0.2612
+2023/06/14 12:51:14 - mmengine - INFO - Iter(train) [2900/3000]  lr: 9.3518e-03  eta: 0:00:31  time: 0.3141  data_time: 0.0023  memory: 3596  loss: 0.0391  decode.loss_ce: 0.0269  decode.acc_seg: 79.9866  aux.loss_ce: 0.0122  aux.acc_seg: 71.3074
+2023/06/14 12:51:46 - mmengine - INFO - Exp name: pspnet-WatermelonDataset_20230614_20230614_122313
+2023/06/14 12:51:46 - mmengine - INFO - Iter(train) [3000/3000]  lr: 9.3294e-03  eta: 0:00:00  time: 0.3144  data_time: 0.0021  memory: 3596  loss: 0.0295  decode.loss_ce: 0.0206  decode.acc_seg: 92.7002  aux.loss_ce: 0.0089  aux.acc_seg: 92.7246
+2023/06/14 12:51:46 - mmengine - INFO - Saving checkpoint at 3000 iterations
